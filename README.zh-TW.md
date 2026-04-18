@@ -10,6 +10,16 @@
 
 本外掛透過 `shell.setSlashCommands()` 將指令目錄註冊至 Cerebr 原生斜線選擇器，因此 `/` 選單的體驗、鍵盤導覽、輸入法（IME）行為及篩選邏輯，均由 Cerebr 原生處理。外掛本身則負責：管理使用者可編輯的指令目錄（內建 4 個預設指令）；選取指令時，將 `{{lang}}` 佔位符替換為當前語系的語言標籤；並提供宿主端算繪的管理頁面，支援新增、重置、編輯、匯入與匯出。
 
+## 從 Release 安裝
+
+Cerebr 外掛管理只接受資料夾，安裝打包版本的流程如下：
+
+1. 到 [最新 Release](../../releases/latest) 下載 `slash-commands-v*.*.*.zip`。
+2. 解壓縮後會得到 `lite-slash-commands/` 資料夾。
+3. 在 Cerebr 開啟開發者模式，把該資料夾拖入進去。
+
+想試還沒發版的最新版？直接 `git clone https://github.com/zeta987/cerebr-plugin-slash-commands.git` 本儲存庫整個拖入即可。
+
 ## 儲存庫結構
 
 ```text

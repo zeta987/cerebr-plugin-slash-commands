@@ -53,15 +53,16 @@ jobs:
           set -euo pipefail
 
           ASSET_NAME="slash-commands-${RELEASE_TAG}.zip"
+          BUNDLE_DIR="lite-slash-commands"
           rm -rf bundle
-          mkdir -p bundle
+          mkdir -p "bundle/${BUNDLE_DIR}"
 
-          cp plugin.json shell.js seed-prompts.json bundle/
-          cp -R helpers locales bundle/
+          cp plugin.json shell.js seed-prompts.json "bundle/${BUNDLE_DIR}/"
+          cp -R helpers locales "bundle/${BUNDLE_DIR}/"
 
           (
             cd bundle
-            zip -r "../${ASSET_NAME}" .
+            zip -r "../${ASSET_NAME}" "${BUNDLE_DIR}"
           )
 
           echo "asset_name=${ASSET_NAME}" >> "${GITHUB_OUTPUT}"

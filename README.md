@@ -14,6 +14,16 @@ The plugin hands its command list to Cerebr's native slash picker through `shell
 
 What the plugin itself handles is the data and management layer: it keeps an editable list of commands (four are seeded by default), rewrites any `{{lang}}` token into the label for your current locale the moment you pick a command, and renders a management page inside Cerebr for creating, editing, resetting, importing, and exporting commands.
 
+## Install from a release
+
+Cerebr's plugin manager only accepts folders, not zip archives. To install a packaged release:
+
+1. Download `slash-commands-v*.*.*.zip` from the [latest release](../../releases/latest).
+2. Unzip it — you'll get a `lite-slash-commands/` folder.
+3. In Cerebr, open developer mode and sideload that unzipped folder.
+
+Want the latest unreleased work? `git clone https://github.com/zeta987/cerebr-plugin-slash-commands.git` the repo and sideload its root directly.
+
 ## Repository layout
 
 ```text
