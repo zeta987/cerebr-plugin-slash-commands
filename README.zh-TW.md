@@ -10,6 +10,12 @@
 
 本外掛透過 `shell.setSlashCommands()` 將指令目錄註冊至 Cerebr 原生斜線選擇器，因此 `/` 選單的體驗、鍵盤導覽、輸入法（IME）行為及篩選邏輯，均由 Cerebr 原生處理。外掛本身則負責：管理使用者可編輯的指令目錄（內建 4 個預設指令）；選取指令時，將 `{{lang}}` 佔位符替換為當前語系的語言標籤；並提供宿主端算繪的管理頁面，支援新增、重置、編輯、匯入與匯出。
 
+## 介面預覽
+
+<img width="800" height="689" alt="斜線指令選擇器 — 繁體中文語系" src="https://github.com/user-attachments/assets/cdc3f4a8-94c5-4478-9c77-eefc49dfd620" />
+
+<img width="1199" height="689" alt="管理頁面 — 繁體中文語系" src="https://github.com/user-attachments/assets/33e2eede-446c-4c98-ab76-463841ed4960" />
+
 ## 從 Release 安裝
 
 Cerebr 外掛管理只接受資料夾，安裝打包版本的流程如下：

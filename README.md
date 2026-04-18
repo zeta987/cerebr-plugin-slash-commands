@@ -14,6 +14,12 @@ The plugin hands its command list to Cerebr's native slash picker through `shell
 
 What the plugin itself handles is the data and management layer: it keeps an editable list of commands (four are seeded by default), rewrites any `{{lang}}` token into the label for your current locale the moment you pick a command, and renders a management page inside Cerebr for creating, editing, resetting, importing, and exporting commands.
 
+## UI preview
+
+<img width="793" height="683" alt="Slash picker — English locale" src="https://github.com/user-attachments/assets/856df077-5429-4152-989f-6444f4f2fa04" />
+
+<img width="1203" height="683" alt="Management page — English locale" src="https://github.com/user-attachments/assets/256f9b44-ebf5-41f4-b000-03690ad59e4e" />
+
 ## Install from a release
 
 Cerebr's plugin manager only accepts folders, not zip archives. To install a packaged release:

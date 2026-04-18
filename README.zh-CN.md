@@ -10,6 +10,12 @@
 
 本插件通过 `shell.setSlashCommands()` 将命令目录注册到 Cerebr 原生的斜杠命令选择器（slash picker）中，因此 `/` 选择菜单的使用体验、键盘导航、输入法（IME）行为及筛选逻辑均由 Cerebr 负责。插件自身负责管理一份用户可编辑的命令目录（包含 4 个预设命令），在选中命令时将 `{{lang}}` 占位符展开为当前语言环境对应的语言标签，并提供一个由宿主端（host）渲染的管理页面，支持新增、重置、编辑、导入和导出操作。
 
+## 界面预览
+
+<img width="800" height="689" alt="斜杠命令选择器 — 简体中文语系" src="https://github.com/user-attachments/assets/ee17399b-9c8b-4410-b56f-f17fa92ec2e1" />
+
+<img width="1200" height="689" alt="管理页面 — 简体中文语系" src="https://github.com/user-attachments/assets/d55bc620-490d-4332-bff1-038ec440e536" />
+
 ## 从 Release 安装
 
 Cerebr 插件管理只接受文件夹，安装打包版本的流程如下：
