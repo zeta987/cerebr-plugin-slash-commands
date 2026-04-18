@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "id": "template.shell.quick-insert",
+  "version": "0.1.0",
+  "kind": "script",
+  "scope": "shell",
+  "displayName": "Quick Insert Template",
+  "description": "A shell plugin that uses host-native input actions, native slash commands, a first-level menu item, and a host page.",
+  "defaultEnabled": true,
+  "permissions": [
+    "prompt:fragments",
+    "shell:input:write",
+    "shell:input:actions",
+    "shell:input:slash-commands",
+    "shell:menu:items",
+    "shell:page:control"
+  ],
+  "activationEvents": ["shell.ready"],
+  "compatibility": {
+    "versionRange": ">=2.4.86 <3.0.0"
+  },
+  "script": {
+    "entry": "./shell.js"
+  }
+}
