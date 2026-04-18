@@ -1,9 +1,10 @@
 {
-  "name": "cerebr-plugin-template",
+  "name": "slash-commands",
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
-    "check": "node ./scripts/check-manifests.mjs"
+    "check": "node ./scripts/check-manifests.mjs ./plugin.json",
+    "selftest": "node ./helpers/__selftest__.mjs"
   }
 }

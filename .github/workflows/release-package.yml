@@ -1,0 +1,87 @@
+name: Release Package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run manifest check
+        run: npm run check
+
+      - name: Run self-tests
+        run: npm run selftest
+
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must match v*.*.*; got ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+
+          PLUGIN_VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('plugin.json', 'utf8')).version)")"
+
+          if [[ "${RELEASE_TAG#v}" != "${PLUGIN_VERSION}" ]]; then
+            echo "Release tag ${RELEASE_TAG} does not match plugin.json version ${PLUGIN_VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Build plugin package
+        id: package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          ASSET_NAME="slash-commands-${RELEASE_TAG}.zip"
+          rm -rf bundle
+          mkdir -p bundle
+
+          cp plugin.json shell.js seed-prompts.json bundle/
+          cp -R helpers locales bundle/
+
+          (
+            cd bundle
+            zip -r "../${ASSET_NAME}" .
+          )
+
+          echo "asset_name=${ASSET_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" --title "${RELEASE_TAG}" --latest
+          else
+            gh release create "${RELEASE_TAG}" --title "${RELEASE_TAG}" --generate-notes --latest
+          fi
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          ASSET_NAME: ${{ steps.package.outputs.asset_name }}
+        run: gh release upload "${RELEASE_TAG}" "${ASSET_NAME}" --clobber

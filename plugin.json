@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "local.slash-commands",
+  "version": "0.1.0",
+  "kind": "script",
+  "scope": "shell",
+  "displayName": "Slash Commands",
+  "description": "Enable host-native slash commands in the Cerebr input box with custom commands, import/export, {{lang}} placeholders, and an in-app management page.",
+  "defaultEnabled": true,
+  "permissions": [
+    "shell:input",
+    "shell:menu",
+    "shell:page",
+    "storage:read",
+    "storage:write"
+  ],
+  "compatibility": {
+    "versionRange": ">=2.4.84 <3.0.0"
+  },
+  "script": {
+    "entry": "./shell.js"
+  }
+}
