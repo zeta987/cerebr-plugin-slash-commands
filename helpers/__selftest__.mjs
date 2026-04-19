@@ -222,6 +222,9 @@ assert.match(shellSource, /\{[^{}]*id:\s*'apply-import'[^{}]*icon:\s*'↓'[^{}]*
 assert.match(shellSource, /\{[^{}]*id:\s*'apply-import-file'[^{}]*icon:\s*'📎'[^{}]*label:\s*t\('ui\.import_json_file'\)[^{}]*\}/, 'shell.js: import file action should use paperclip icon and file label');
 assert.match(shellSource, /\{[^{}]*id:\s*'back-manage'[^{}]*icon:\s*'←'[^{}]*label:\s*t\('ui\.back_to_list'\)[^{}]*\}/, 'shell.js: back action should use icon plus label');
 assert.match(shellSource, /title:\s*runtimeState\.pageMode === 'import'[\s\S]*?:\s*t\('ui\.menu_label'\)/, 'shell.js: manage page title should fall back to ui.menu_label instead of an empty string');
+assert.doesNotMatch(shellSource, /\{[^{}]*id:\s*'open-slash-commands'[^{}]*icon:\s*['"`/][^{}]*\}/, 'shell.js: top-level slash commands menu item should not render a text icon');
+assert.doesNotMatch(shellSource, /\{[^{}]*id:\s*'open-slash-commands'[^{}]*iconSvg:\s*[^,}]+/, 'shell.js: top-level slash commands menu item should not render an SVG icon');
+assert.doesNotMatch(shellSource, /const\s+MENU_ICON_SVG\s*=/, 'shell.js: unused slash menu SVG constant should be removed');
 assert.doesNotMatch(shellSource, /function buildImportView\(\)\s*\{[\s\S]*?title:\s*t\('ui\.import_json'\)/, 'shell.js: import view card should not repeat the host page title');
 assert.doesNotMatch(shellSource, /function buildImportView\(\)\s*\{[\s\S]*?description:\s*t\('ui\.import_note'\)/, 'shell.js: import view card should not repeat the host page subtitle');
 assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?title:\s*t\('ui\.export_json'\)/, 'shell.js: export view card should not repeat the host page title');

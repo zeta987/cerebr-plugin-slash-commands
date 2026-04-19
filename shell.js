@@ -530,13 +530,9 @@ async function syncSlashCommands() {
     });
 }
 
-const MENU_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4 L16 20"/></svg>';
-
 async function syncMenuItems() {
     await runtimeState.api.shell.setMenuItems([{
         id: 'open-slash-commands',
-        icon: '/',
-        iconSvg: MENU_ICON_SVG,
         label: t('ui.menu_label'),
         title: t('ui.menu_title'),
         order: 65,
