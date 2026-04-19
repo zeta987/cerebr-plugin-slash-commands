@@ -6,7 +6,7 @@
   "scope": "shell",
   "displayName": "Slash Commands",
   "nameKey": "slash_commands.name",
-  "description": "Enable host-native slash commands in the Cerebr input box with custom commands, import/export, {{lang}} placeholders, and an in-app management page.",
+  "description": "Enable shortcuts in the Cerebr input field by typing /. Manage custom commands with import/export functionality, target language {{lang}} placeholders, and a dedicated in-app management page.",
   "descriptionKey": "slash_commands.description",
   "publisher": "zeta987",
   "homepage": "https://github.com/zeta987/cerebr-plugin-slash-commands",
@@ -29,14 +29,18 @@
   },
   "defaultEnabled": true,
   "permissions": [
-    "shell:input",
-    "shell:menu",
-    "shell:page",
-    "storage:read",
-    "storage:write"
+    "shell:input:actions",
+    "shell:input:slash-commands",
+    "shell:page:control",
+    "shell:menu:items",
+    "storage:read:local",
+    "storage:write:local"
+  ],
+  "activationEvents": [
+    "shell.ready"
   ],
   "compatibility": {
-    "versionRange": ">=2.5.2 <3.0.0"
+    "versionRange": ">=2.5.6 <3.0.0"
   },
   "script": {
     "entry": "./shell.js"

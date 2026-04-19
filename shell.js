@@ -6,6 +6,7 @@ import {
 } from './helpers/plugin-i18n.js';
 import { expandLanguagePlaceholders } from './helpers/language-placeholders.js';
 import { buildManageSections, toggleExpandedCommandId } from './helpers/manage-page-view.js';
+import { reorderCommandsByIds } from './helpers/reorder-commands.js';
 import seedPromptsSource from './seed-prompts.json' with { type: 'json' };
 
 const STORAGE_KEY = 'cerebr_plugin_lite_slash_commands_v1';
@@ -750,6 +751,28 @@ async function moveCommand(commandId, delta) {
     return true;
 }
 
+async function reorderCommands(orderedItemIds, values = {}) {
+    const currentCommands = getCommands();
+    const nextCommands = reorderCommandsByIds(currentCommands, orderedItemIds);
+    if (!nextCommands) {
+        return false;
+    }
+
+    const changed = nextCommands.some((command, index) => command.id !== currentCommands[index]?.id);
+    if (!changed) {
+        return false;
+    }
+
+    const snapshot = captureEditorSnapshot(values);
+    await persistEnvelope({
+        ...runtimeState.commandEnvelope,
+        commands: nextCommands,
+    });
+    restoreEditorSnapshot(snapshot);
+    await renderCurrentPage({ resetViewState: true });
+    return true;
+}
+
 async function deleteCommand(commandId) {
     const commands = [...getCommands()];
     const index = commands.findIndex((command) => command.id === commandId);
@@ -845,6 +868,29 @@ function updateDraftValues(values = {}) {
         ...runtimeState.editorValues,
         ...values,
     });
+}
+
+function captureEditorSnapshot(values = {}) {
+    return {
+        editorMode: runtimeState.editorMode,
+        selectedCommandId: runtimeState.selectedCommandId,
+        expandedCommandId: runtimeState.expandedCommandId,
+        editorValues: cloneFieldValues({
+            ...runtimeState.editorValues,
+            ...values,
+        }),
+    };
+}
+
+function restoreEditorSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') {
+        return;
+    }
+
+    runtimeState.editorMode = snapshot.editorMode || 'create';
+    runtimeState.selectedCommandId = snapshot.selectedCommandId || '';
+    runtimeState.expandedCommandId = snapshot.expandedCommandId || '';
+    runtimeState.editorValues = cloneFieldValues(snapshot.editorValues);
 }
 
 async function handleManageAction(event) {
@@ -978,15 +1024,25 @@ async function handlePageEvent(event = {}) {
         return;
     }
 
-    if (event?.type !== 'action') {
-        return;
-    }
-
     try {
         if (runtimeState.pageMode === 'manage') {
+            const values = event?.values && typeof event.values === 'object' ? event.values : {};
+            if (event?.type === 'reorder' && event.listId === 'slash-commands') {
+                await reorderCommands(Array.isArray(event.orderedItemIds) ? event.orderedItemIds : [], values);
+                return;
+            }
+
+            if (event?.type !== 'action') {
+                return;
+            }
             await handleManageAction(event);
             return;
         }
+
+        if (event?.type !== 'action') {
+            return;
+        }
+
         if (runtimeState.pageMode === 'import') {
             await handleImportAction(event);
             return;

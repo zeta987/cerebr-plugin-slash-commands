@@ -40,22 +40,12 @@ function createEditorFields(editorValues, t) {
     ];
 }
 
-function createEditorActions({ editorMode, canMoveUp, canMoveDown, t }) {
+function createEditorActions({ editorMode, t }) {
     return [
         {
             id: 'save-command',
             label: t('ui.save_changes'),
             variant: 'primary',
-        },
-        {
-            id: 'move-up',
-            label: t('ui.move_up'),
-            disabled: editorMode !== 'edit' || !canMoveUp,
-        },
-        {
-            id: 'move-down',
-            label: t('ui.move_down'),
-            disabled: editorMode !== 'edit' || !canMoveDown,
         },
         {
             id: 'delete-current',
@@ -73,8 +63,6 @@ function createExpandedEditorBody({
     editorValues,
     currentLocale,
     formatTimestamp,
-    canMoveUp,
-    canMoveDown,
     t,
 }) {
     const title = editorMode === 'create'
@@ -97,23 +85,27 @@ function createExpandedEditorBody({
         },
         {
             kind: 'form',
+            columns: 1,
             fields: createEditorFields(editorValues, t),
         },
         {
             kind: 'actions',
-            actions: createEditorActions({ editorMode, canMoveUp, canMoveDown, t }),
+            actions: createEditorActions({ editorMode, t }),
         },
     ];
 }
 
-function createCommandRowItem({ command, index, total, expandedCommandId, t }) {
-    const slashName = `/${command.name}`;
+function createCommandRowItem({
+    command,
+    expandedCommandId,
+}) {
+    const expanded = expandedCommandId === command.id;
     return {
         id: command.id,
-        title: slashName,
+        title: command.name,
         description: '',
         meta: '',
-        selected: expandedCommandId === command.id,
+        selected: expanded,
         actionId: 'toggle-command',
         actions: [],
     };
@@ -162,47 +154,58 @@ export function buildManageSections({
                 editorValues,
                 currentLocale,
                 formatTimestamp,
-                canMoveUp: false,
-                canMoveDown: false,
                 t,
             }),
         });
         return sections;
     }
 
-    const stackBody = [];
-    commands.forEach((command, index) => {
-        const expanded = expandedCommandId === command.id;
-        stackBody.push({
-            kind: 'list',
-            items: [
-                createCommandRowItem({
-                    command,
-                    index,
-                    total: commands.length,
-                    expandedCommandId,
+    if (expandedCommandId) {
+        const stackBody = [];
+        commands.forEach((command) => {
+            stackBody.push({
+                kind: 'list',
+                items: [
+                    createCommandRowItem({
+                        command,
+                        expandedCommandId,
+                    }),
+                ],
+            });
+
+            if (command.id === expandedCommandId) {
+                stackBody.push(...createExpandedEditorBody({
+                    command: selectedCommand,
+                    editorMode,
+                    editorValues,
+                    currentLocale,
+                    formatTimestamp,
                     t,
-                }),
-            ],
+                }));
+            }
         });
 
-        if (expanded) {
-            stackBody.push(...createExpandedEditorBody({
-                command,
-                editorMode,
-                editorValues,
-                currentLocale,
-                formatTimestamp,
-                canMoveUp: index > 0,
-                canMoveDown: index < commands.length - 1,
-                t,
-            }));
-        }
-    });
+        sections.push({
+            kind: 'card',
+            body: stackBody,
+        });
+
+        return sections;
+    }
 
     sections.push({
         kind: 'card',
-        body: stackBody,
+        body: [
+            {
+                kind: 'list',
+                id: 'slash-commands',
+                sortable: true,
+                items: commands.map((command) => createCommandRowItem({
+                    command,
+                    expandedCommandId,
+                })),
+            },
+        ],
     });
 
     return sections;

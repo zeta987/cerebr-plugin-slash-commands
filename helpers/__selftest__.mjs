@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { expandLanguagePlaceholders } from './language-placeholders.js';
 import { buildManageSections, toggleExpandedCommandId } from './manage-page-view.js';
+import { reorderCommandsByIds } from './reorder-commands.js';
 
 // --- language-placeholders.js ---
 assert.equal(expandLanguagePlaceholders('Reply in {{lang}}.', '正體中文'), 'Reply in 正體中文.');
@@ -111,18 +112,21 @@ const manageSections = buildManageSections({
     formatTimestamp: formatDate,
     t: translate,
 });
-assert.equal(manageSections.length, 2, 'manage sections should include top actions plus one compact command stack card');
-assert.equal(manageSections[1].body.length, 5, 'command stack should keep rows compact and append editor blocks only once');
-assert.equal(manageSections[1].body[0].kind, 'list', 'first command row should render as a list block');
-assert.equal(manageSections[1].body[1].kind, 'list', 'second command row should render as a list block');
+assert.equal(manageSections.length, 2, 'manage sections should include top actions plus one sortable command list card');
+assert.equal(manageSections[1].body.length, 5, 'expanded command stack should insert the editor directly after the selected row');
+assert.equal(manageSections[1].body[0].kind, 'list', 'first command row should still render as a host list block');
+assert.equal(manageSections[1].body[1].kind, 'list', 'selected command row should stay in its own list block');
 assert.equal(manageSections[1].body[1].items[0].actionId, 'toggle-command', 'command rows should use toggle-command');
-assert.equal(manageSections[1].body[0].items[0].title, '/alpha', 'command rows should only show the slash command name');
-assert.equal(manageSections[1].body[0].items[0].description, '', 'command rows should not repeat the display label as description');
+assert.equal(manageSections[1].body[0].items[0].token ?? '', '', 'command rows should not render a separate slash token');
+assert.equal(manageSections[1].body[0].items[0].title, 'alpha', 'command rows should show only the command name without the slash prefix');
+assert.equal(manageSections[1].body[0].items[0].description, '', 'command rows should not duplicate the command with extra description text');
 assert.equal(manageSections[1].body[0].items[0].meta, '', 'command rows should not repeat the slash name as meta');
 assert.equal(manageSections[1].body[0].items[0].actions.length, 0, 'command rows should stay compact without inline action columns');
-assert.equal(manageSections[1].body[2].kind, 'note', 'expanded row should render inline note metadata');
-assert.equal(manageSections[1].body[3].kind, 'form', 'expanded row should render inline form');
-assert.equal(manageSections[1].body[4].kind, 'actions', 'expanded row should render inline actions');
+assert.equal(manageSections[1].body[1].items[0].body?.length ?? 0, 0, 'expanded rows should not inline body content that gets pushed into a right-side column');
+assert.equal(manageSections[1].body[2].kind, 'note', 'expanded editor note should render directly after the selected row');
+assert.equal(manageSections[1].body[3].kind, 'form', 'expanded editor form should render directly after the selected row');
+assert.equal(manageSections[1].body[4].kind, 'actions', 'expanded editor actions should render directly after the selected row');
+assert.equal(manageSections[1].body[3].columns, 1, 'expanded editor form should use a single column so it expands downward');
 assert.deepEqual(
     manageSections[1].body[3].fields.map((field) => field.id),
     ['name', 'aliases', 'description', 'prompt'],
@@ -135,8 +139,24 @@ assert.equal(
 );
 assert.equal(
     manageSections[1].body[4].actions.some((action) => action.id === 'move-down'),
-    true,
-    'expanded editor should expose move actions instead of row-side action columns',
+    false,
+    'expanded editor should no longer expose move-down',
+);
+assert.equal(
+    manageSections[1].body[4].actions.some((action) => action.id === 'move-up'),
+    false,
+    'expanded editor should no longer expose move-up',
+);
+
+assert.deepEqual(
+    reorderCommandsByIds(commands, ['cmd-2', 'cmd-1'])?.map((command) => command.id),
+    ['cmd-2', 'cmd-1'],
+    'reorderCommandsByIds should return commands in the ordered item sequence',
+);
+assert.equal(
+    reorderCommandsByIds(commands, ['cmd-2']) ?? null,
+    null,
+    'reorderCommandsByIds should reject incomplete reorder payloads',
 );
 
 const draftSections = buildManageSections({
@@ -164,6 +184,26 @@ assert.deepEqual(
     'draft editor should hide the display title field and keep only four editor fields',
 );
 assert.equal(draftSections[1].body[2].kind, 'actions', 'draft card should render inline actions without a shared editor');
+
+const collapsedSections = buildManageSections({
+    topActions: [{ id: 'create-command', label: 'Create' }],
+    commands,
+    expandedCommandId: '',
+    editorMode: 'edit',
+    editorValues: {
+        name: 'alpha',
+        label: 'Alpha',
+        aliases: '',
+        description: 'First',
+        prompt: 'Prompt A',
+    },
+    selectedCommand: commands[0],
+    currentLocale: 'en',
+    formatTimestamp: formatDate,
+    t: translate,
+});
+assert.equal(collapsedSections[1].body.length, 1, 'collapsed state should keep a single sortable list');
+assert.equal(collapsedSections[1].body[0].sortable, true, 'collapsed command stack should stay sortable');
 console.log('manage-page-view.js: layout OK');
 
 // --- management page action icons ---
@@ -189,6 +229,8 @@ assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?descr
 assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?label:\s*command\.description \|\| ''/, 'shell.js: slash picker right-side label should reuse command.description');
 assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?description:\s*''/, 'shell.js: slash picker lower description line should stay empty');
 assert.match(shellSource, /async function saveCurrentCommand\(values\) \{[\s\S]*?beginEditCommand\(nextCommand\.id\);\s*collapseEditor\(\);/, 'shell.js: saving a command should collapse the editor after selecting the saved command');
+assert.match(shellSource, /if \(event\?\.type === 'reorder' && event\.listId === 'slash-commands'\)/, 'shell.js: manage page should handle host reorder events for slash-commands');
+assert.match(shellSource, /await reorderCommands\(Array\.isArray\(event\.orderedItemIds\) \? event\.orderedItemIds : \[\], values\);/, 'shell.js: reorder handler should forward live form values so drafts survive drag sorting');
 assert.doesNotMatch(shellSource, /id:\s*'copy-export'/, 'shell.js: export copy action must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_title'\)/, 'shell.js: settings_title references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_subtitle'\)/, 'shell.js: settings_subtitle references must be removed');
