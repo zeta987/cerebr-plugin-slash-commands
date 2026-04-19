@@ -1,11 +1,32 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "local.slash-commands",
   "version": "0.1.0",
   "kind": "script",
   "scope": "shell",
   "displayName": "Slash Commands",
+  "nameKey": "slash_commands.name",
   "description": "Enable host-native slash commands in the Cerebr input box with custom commands, import/export, {{lang}} placeholders, and an in-app management page.",
+  "descriptionKey": "slash_commands.description",
+  "publisher": "zeta987",
+  "homepage": "https://github.com/zeta987/cerebr-plugin-slash-commands",
+  "i18n": {
+    "defaultLocale": "en",
+    "messages": {
+      "en": {
+        "slash_commands.name": "Slash Commands",
+        "slash_commands.description": "Enable host-native slash commands in the Cerebr input box with custom commands, import/export, {{lang}} placeholders, and an in-app management page."
+      },
+      "zh-TW": {
+        "slash_commands.name": "指令列表",
+        "slash_commands.description": "在 Cerebr 輸入框啟用 host-native 指令列表，支援自訂指令、匯入/匯出、{{lang}} 佔位符，並內建指令管理頁。"
+      },
+      "zh-CN": {
+        "slash_commands.name": "命令列表",
+        "slash_commands.description": "在 Cerebr 输入框启用 host-native 命令列表，支持自定义命令、导入/导出、{{lang}} 占位符，并内置命令管理页。"
+      }
+    }
+  },
   "defaultEnabled": true,
   "permissions": [
     "shell:input",
