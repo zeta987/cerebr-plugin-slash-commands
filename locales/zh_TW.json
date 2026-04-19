@@ -23,8 +23,6 @@
     "dirty_indicator_tooltip": "有未儲存變更",
     "field_name_label": "指令名稱",
     "field_name_placeholder": "例如：翻譯",
-    "field_label_label": "顯示標題",
-    "field_label_placeholder": "例如：翻譯成目標語言",
     "field_aliases_label": "別名",
     "field_aliases_placeholder": "用逗號或換行分隔",
     "field_aliases_note": "別名只用於搜尋與輸入匹配，不會另外顯示成主要指令名。",

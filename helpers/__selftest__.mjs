@@ -27,7 +27,12 @@ const REQUIRED_UI_KEYS = [
     'export_json','import_json','reset_defaults','more_menu',
     'status_imported','status_count','error_json_parse','import_json_file',
 ];
-const REMOVED_UI_KEYS = ['settings_title', 'settings_subtitle'];
+const REMOVED_UI_KEYS = [
+    'settings_title',
+    'settings_subtitle',
+    'field_label_label',
+    'field_label_placeholder',
+];
 const REQUIRED_SEED_KEYS = ['explain','translate','summarize','code_explain'];
 
 for (const locale of ['zh_TW','zh_CN','en']) {
@@ -118,6 +123,11 @@ assert.equal(manageSections[1].body[0].items[0].actions.length, 0, 'command rows
 assert.equal(manageSections[1].body[2].kind, 'note', 'expanded row should render inline note metadata');
 assert.equal(manageSections[1].body[3].kind, 'form', 'expanded row should render inline form');
 assert.equal(manageSections[1].body[4].kind, 'actions', 'expanded row should render inline actions');
+assert.deepEqual(
+    manageSections[1].body[3].fields.map((field) => field.id),
+    ['name', 'aliases', 'description', 'prompt'],
+    'expanded editor should hide the display title field and keep only four editor fields',
+);
 assert.equal(
     manageSections[1].body[4].actions.some((action) => action.id === 'delete-current'),
     true,
@@ -148,6 +158,11 @@ const draftSections = buildManageSections({
 });
 assert.equal(draftSections.length, 2, 'empty command collection should still render a stack card');
 assert.equal(draftSections[1].body[0].kind, 'note', 'draft card should stay inside the command stack');
+assert.deepEqual(
+    draftSections[1].body[1].fields.map((field) => field.id),
+    ['name', 'aliases', 'description', 'prompt'],
+    'draft editor should hide the display title field and keep only four editor fields',
+);
 assert.equal(draftSections[1].body[2].kind, 'actions', 'draft card should render inline actions without a shared editor');
 console.log('manage-page-view.js: layout OK');
 
@@ -166,9 +181,19 @@ for (const pattern of TOP_ACTION_ICON_PATTERNS) {
 assert.match(shellSource, /\{[^{}]*id:\s*'apply-import'[^{}]*icon:\s*'↓'[^{}]*label:\s*t\('ui\.import_action'\)[^{}]*\}/, 'shell.js: import action should use icon plus label');
 assert.match(shellSource, /\{[^{}]*id:\s*'apply-import-file'[^{}]*icon:\s*'📎'[^{}]*label:\s*t\('ui\.import_json_file'\)[^{}]*\}/, 'shell.js: import file action should use paperclip icon and file label');
 assert.match(shellSource, /\{[^{}]*id:\s*'back-manage'[^{}]*icon:\s*'←'[^{}]*label:\s*t\('ui\.back_to_list'\)[^{}]*\}/, 'shell.js: back action should use icon plus label');
+assert.match(shellSource, /title:\s*runtimeState\.pageMode === 'import'[\s\S]*?:\s*t\('ui\.menu_label'\)/, 'shell.js: manage page title should fall back to ui.menu_label instead of an empty string');
+assert.doesNotMatch(shellSource, /function buildImportView\(\)\s*\{[\s\S]*?title:\s*t\('ui\.import_json'\)/, 'shell.js: import view card should not repeat the host page title');
+assert.doesNotMatch(shellSource, /function buildImportView\(\)\s*\{[\s\S]*?description:\s*t\('ui\.import_note'\)/, 'shell.js: import view card should not repeat the host page subtitle');
+assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?title:\s*t\('ui\.export_json'\)/, 'shell.js: export view card should not repeat the host page title');
+assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?description:\s*t\('ui\.import_note'\)/, 'shell.js: export view card should not repeat the host page subtitle');
+assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?label:\s*command\.description \|\| ''/, 'shell.js: slash picker right-side label should reuse command.description');
+assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?description:\s*''/, 'shell.js: slash picker lower description line should stay empty');
+assert.match(shellSource, /async function saveCurrentCommand\(values\) \{[\s\S]*?beginEditCommand\(nextCommand\.id\);\s*collapseEditor\(\);/, 'shell.js: saving a command should collapse the editor after selecting the saved command');
 assert.doesNotMatch(shellSource, /id:\s*'copy-export'/, 'shell.js: export copy action must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_title'\)/, 'shell.js: settings_title references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_subtitle'\)/, 'shell.js: settings_subtitle references must be removed');
+assert.doesNotMatch(shellSource, /t\('ui\.field_label_label'\)/, 'shell.js: display title label references must be removed');
+assert.doesNotMatch(shellSource, /t\('ui\.field_label_placeholder'\)/, 'shell.js: display title placeholder references must be removed');
 assert.doesNotMatch(shellSource, /status_reordered/, 'shell.js: reorder success toasts must be removed');
 console.log('shell.js: top action icons OK');
 

@@ -12,13 +12,6 @@ function createEditorFields(editorValues, t) {
             placeholder: t('ui.field_name_placeholder'),
         },
         {
-            id: 'label',
-            label: t('ui.field_label_label'),
-            type: 'text',
-            value: editorValues.label,
-            placeholder: t('ui.field_label_placeholder'),
-        },
-        {
             id: 'aliases',
             label: t('ui.field_aliases_label'),
             type: 'textarea',

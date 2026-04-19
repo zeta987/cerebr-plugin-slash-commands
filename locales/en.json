@@ -23,8 +23,6 @@
     "dirty_indicator_tooltip": "Unsaved changes",
     "field_name_label": "Command name",
     "field_name_placeholder": "e.g. translate",
-    "field_label_label": "Display title",
-    "field_label_placeholder": "e.g. Translate into target language",
     "field_aliases_label": "Aliases",
     "field_aliases_placeholder": "Separate with commas or newlines",
     "field_aliases_note": "Aliases are only used for search and input matching; they are not shown as primary command names.",

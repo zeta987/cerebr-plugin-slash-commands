@@ -513,8 +513,8 @@ function buildSlashCommandDescriptors(commands = []) {
     return commands.map((command, index) => ({
         id: command.id,
         name: command.name,
-        label: command.label || command.name,
-        description: command.description || '',
+        label: command.description || '',
+        description: '',
         aliases: [...normalizeAliasList(command.aliases)],
         prompt: expandLanguagePlaceholders(String(command.prompt ?? '').trimEnd(), localeLabel),
         separator: '\n\n',
@@ -591,8 +591,6 @@ function buildImportView() {
         sections: [
             {
                 kind: 'card',
-                title: t('ui.import_json'),
-                description: t('ui.import_note'),
                 body: [
                     {
                         kind: 'form',
@@ -648,8 +646,6 @@ function buildExportView() {
         sections: [
             {
                 kind: 'card',
-                title: t('ui.export_json'),
-                description: t('ui.import_note'),
                 body: [
                     {
                         kind: 'form',
@@ -688,7 +684,7 @@ function buildCurrentPage() {
             ? t('ui.import_json')
             : runtimeState.pageMode === 'export'
                 ? t('ui.export_json')
-                : '',
+                : t('ui.menu_label'),
         subtitle: runtimeState.pageMode === 'manage'
             ? ''
             : t('ui.import_note'),
@@ -801,6 +797,7 @@ async function saveCurrentCommand(values) {
         commands,
     });
     beginEditCommand(nextCommand.id);
+    collapseEditor();
     runtimeState.api.ui.showToast(t('ui.status_saved', [nextCommand.name]));
     await renderCurrentPage({ resetViewState: true });
 }

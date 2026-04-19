@@ -23,8 +23,6 @@
     "dirty_indicator_tooltip": "有未保存更改",
     "field_name_label": "命令名称",
     "field_name_placeholder": "例如：翻译",
-    "field_label_label": "显示标题",
-    "field_label_placeholder": "例如：翻译成目标语言",
     "field_aliases_label": "别名",
     "field_aliases_placeholder": "用逗号或换行分隔",
     "field_aliases_note": "别名仅用于搜索与输入匹配，不会另外显示成主要命令名。",
