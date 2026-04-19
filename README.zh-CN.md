@@ -14,7 +14,7 @@
 
 <img width="800" height="689" alt="斜杠命令选择器 — 简体中文语系" src="https://github.com/user-attachments/assets/ee17399b-9c8b-4410-b56f-f17fa92ec2e1" />
 
-<img width="1200" height="689" alt="管理页面 — 简体中文语系" src="https://github.com/user-attachments/assets/d55bc620-490d-4332-bff1-038ec440e536" />
+<img width="1286" height="1011" alt="管理页面 — 简体中文" src="https://github.com/user-attachments/assets/ed4fe7fe-cd14-452d-8b7c-9f4ab991a985" />
 
 ## 浏览器支持
 

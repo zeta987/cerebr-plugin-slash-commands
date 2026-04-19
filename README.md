@@ -18,7 +18,7 @@ What the plugin itself handles is the data and management layer: it keeps an edi
 
 <img width="793" height="683" alt="Slash picker — English locale" src="https://github.com/user-attachments/assets/856df077-5429-4152-989f-6444f4f2fa04" />
 
-<img width="1203" height="683" alt="Management page — English locale" src="https://github.com/user-attachments/assets/256f9b44-ebf5-41f4-b000-03690ad59e4e" />
+<img width="1289" height="975" alt="Management page — English" src="https://github.com/user-attachments/assets/aa99e4d4-cc8d-4821-b44f-bc9583c7c3f6" />
 
 ## Browser support
 

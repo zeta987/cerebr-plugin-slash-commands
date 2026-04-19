@@ -14,7 +14,7 @@
 
 <img width="800" height="689" alt="斜線指令選擇器 — 繁體中文語系" src="https://github.com/user-attachments/assets/cdc3f4a8-94c5-4478-9c77-eefc49dfd620" />
 
-<img width="1199" height="689" alt="管理頁面 — 繁體中文語系" src="https://github.com/user-attachments/assets/33e2eede-446c-4c98-ab76-463841ed4960" />
+<img width="1272" height="1011" alt="管理頁面 — 繁體中文" src="https://github.com/user-attachments/assets/ec57a208-36fd-4f11-bd8e-deea00c69787" />
 
 ## 瀏覽器支援
 
