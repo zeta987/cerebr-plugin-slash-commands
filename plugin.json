@@ -36,7 +36,7 @@
     "storage:write"
   ],
   "compatibility": {
-    "versionRange": ">=2.5.0 <3.0.0"
+    "versionRange": ">=2.5.2 <3.0.0"
   },
   "script": {
     "entry": "./shell.js"
