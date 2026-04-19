@@ -86,7 +86,7 @@ npm run check
 npm run selftest
 ```
 
-如果想直接呼叫 manifest 驗證腳本，也可以這樣跑：
+如果想直接呼叫 manifest 驗證指令碼，也可以這樣跑：
 
 ```bash
 node ./scripts/check-manifests.mjs ./plugin.json
@@ -99,9 +99,9 @@ node ./scripts/check-manifests.mjs ./plugin.json
 這個專案是 Cerebr 的 shell 外掛，所以開發、側載與手動測試都依附在 Cerebr 生態裡進行。
 
 - Cerebr 主程式：https://github.com/yym68686/Cerebr
-- Cerebr 外掛開發模板：https://github.com/yym68686/cerebr-plugin-template
+- Cerebr 外掛開發範本：https://github.com/yym68686/cerebr-plugin-template
 
-如果妳想從零開始做另一個外掛，建議先從上面的模板儲存庫起手；而這個 repo 則是 `slash-commands` 外掛獨立出來之後的實作與維護倉庫。
+如果妳想從零開始做另一個外掛，建議先從上面的範本儲存庫起手；而這個 repo 則是 `slash-commands` 外掛獨立出來之後的實作與維護倉庫。
 
 ## 授權
 
