@@ -15,15 +15,15 @@
     "messages": {
       "en": {
         "slash_commands.name": "Slash Commands",
-        "slash_commands.description": "Enable host-native slash commands in the Cerebr input box with custom commands, import/export, {{lang}} placeholders, and an in-app management page."
+        "slash_commands.description": "Enable shortcuts in the Cerebr input field by typing /. Manage custom commands with import/export functionality, target language {{lang}} placeholders, and a dedicated in-app management page."
       },
       "zh-TW": {
         "slash_commands.name": "快捷指令",
-        "slash_commands.description": "在 Cerebr 輸入框啟用 host-native 指令列表，支援自訂指令、匯入/匯出、{{lang}} 佔位符，並內建指令管理頁。"
+        "slash_commands.description": "在 Cerebr 輸入框透過輸入 / 啟用快捷指令，支援自訂指令、匯入/匯出、目標語言 {{lang}} 佔位符，並內建指令管理頁。"
       },
       "zh-CN": {
         "slash_commands.name": "快捷命令",
-        "slash_commands.description": "在 Cerebr 输入框启用 host-native 命令列表，支持自定义命令、导入/导出、{{lang}} 占位符，并内置命令管理页。"
+        "slash_commands.description": "在 Cerebr 输入框透过输入 / 启用快捷命令，支持自定义命令、导入/导出、目标语言 {{lang}} 占位符，并内置命令管理页。"
       }
     }
   },
