@@ -392,6 +392,31 @@ function beginCreateCommand() {
     runtimeState.pageViewRevision += 1;
 }
 
+async function createCommandAndEdit() {
+    const existing = getCommands();
+    const now = Date.now();
+    const newCommand = decorateCommand({
+        id: createCommandId(),
+        name: t('ui.blank_command_name', [existing.length + 1]),
+        label: '',
+        prompt: t('ui.blank_command_prompt'),
+        description: '',
+        aliases: [],
+        createdAt: now,
+        updatedAt: now,
+    });
+
+    runtimeState.selectedCommandId = newCommand.id;
+    runtimeState.editorMode = 'edit';
+    runtimeState.editorValues = commandToFormValues(newCommand);
+    runtimeState.pageViewRevision += 1;
+
+    await persistEnvelope({
+        ...runtimeState.commandEnvelope,
+        commands: [...existing, newCommand],
+    });
+}
+
 function beginEditCommand(commandId) {
     const command = getCommands().find((item) => item.id === commandId);
     if (!command) {
@@ -558,31 +583,14 @@ function buildManageView() {
             formatTimestamp(selectedCommand.createdAt, runtimeState.currentLocale),
             formatTimestamp(selectedCommand.updatedAt, runtimeState.currentLocale),
         ])
-        : t('ui.settings_subtitle');
+        : '';
 
     return {
         sections: [
             {
                 kind: 'card',
                 variant: 'subtle',
-                title: t('ui.settings_title'),
-                description: t('ui.settings_subtitle'),
                 body: [
-                    {
-                        kind: 'stats',
-                        items: [
-                            {
-                                label: t('ui.status_count', [getCommands().length]).replace(/^[^0-9\u4e00-\u9fa5A-Za-z]*/, ''),
-                                value: String(getCommands().length),
-                                tone: 'primary',
-                            },
-                            {
-                                label: 'Locale',
-                                value: getLocaleLabel(),
-                                tone: 'muted',
-                            },
-                        ],
-                    },
                     {
                         kind: 'actions',
                         actions: createTopActions(),
@@ -591,21 +599,18 @@ function buildManageView() {
             },
             {
                 kind: 'card',
-                title: t('ui.settings_title'),
-                description: t('ui.status_count', [getCommands().length]),
                 body: [
                     {
                         kind: 'list',
                         emptyText: t('ui.list_empty'),
                         items: createCommandListItems(),
                     },
-                ],
-            },
-            {
-                kind: 'card',
-                title: editorTitle,
-                description: editorDescription,
-                body: [
+                    {
+                        kind: 'note',
+                        title: editorTitle,
+                        text: editorDescription,
+                        tone: 'muted',
+                    },
                     {
                         kind: 'form',
                         fields: [
@@ -658,19 +663,6 @@ function buildManageView() {
                                 id: 'save-command',
                                 label: t('ui.save_changes'),
                                 variant: 'primary',
-                            },
-                            {
-                                id: 'move-current-up',
-                                label: t('ui.move_up'),
-                                disabled: runtimeState.editorMode !== 'edit'
-                                    || getCommands().findIndex((item) => item.id === runtimeState.selectedCommandId) <= 0,
-                            },
-                            {
-                                id: 'move-current-down',
-                                label: t('ui.move_down'),
-                                disabled: runtimeState.editorMode !== 'edit'
-                                    || getCommands().findIndex((item) => item.id === runtimeState.selectedCommandId) === -1
-                                    || getCommands().findIndex((item) => item.id === runtimeState.selectedCommandId) >= getCommands().length - 1,
                             },
                             {
                                 id: 'delete-current',
@@ -969,7 +961,7 @@ async function handleManageAction(event) {
     const values = event?.values && typeof event.values === 'object' ? event.values : {};
 
     if (actionId === 'create-command') {
-        beginCreateCommand();
+        await createCommandAndEdit();
         await renderCurrentPage({ resetViewState: true });
         return;
     }
@@ -1017,16 +1009,6 @@ async function handleManageAction(event) {
 
     if (actionId === 'save-command') {
         await saveCurrentCommand(values);
-        return;
-    }
-
-    if (actionId === 'move-current-up' && runtimeState.selectedCommandId) {
-        await moveCommand(runtimeState.selectedCommandId, -1);
-        return;
-    }
-
-    if (actionId === 'move-current-down' && runtimeState.selectedCommandId) {
-        await moveCommand(runtimeState.selectedCommandId, 1);
         return;
     }
 
