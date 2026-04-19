@@ -20,12 +20,13 @@ console.log('language-placeholders.js: 7 assertions passed');
 const here = dirname(fileURLToPath(import.meta.url));
 const localesDir = join(here, '..', 'locales');
 const REQUIRED_UI_KEYS = [
-    'settings_title','list_empty','create_command','back_to_list',
+    'list_empty','create_command','back_to_list',
     'save_changes','delete_command','field_name_label','field_prompt_label',
     'status_saved','error_name_required','error_prompt_required','picker_empty',
     'export_json','import_json','reset_defaults','more_menu',
     'status_imported','status_count','error_json_parse',
 ];
+const REMOVED_UI_KEYS = ['settings_title', 'settings_subtitle'];
 const REQUIRED_SEED_KEYS = ['explain','translate','summarize','code_explain'];
 
 for (const locale of ['zh_TW','zh_CN','en']) {
@@ -35,6 +36,9 @@ for (const locale of ['zh_TW','zh_CN','en']) {
     assert.ok(map.language_label.trim().length > 0, `${locale}: language_label must be non-empty`);
     for (const key of REQUIRED_UI_KEYS) {
         assert.equal(typeof map?.ui?.[key], 'string', `${locale}: ui.${key} must be string`);
+    }
+    for (const key of REMOVED_UI_KEYS) {
+        assert.equal(map?.ui?.[key], undefined, `${locale}: ui.${key} must be removed`);
     }
     for (const seedKey of REQUIRED_SEED_KEYS) {
         const meta = map?.seed_commands?.[seedKey];
@@ -66,6 +70,8 @@ const TOP_ACTION_ICON_PATTERNS = [
 for (const pattern of TOP_ACTION_ICON_PATTERNS) {
     assert.match(shellSource, pattern, `shell.js: missing management action icon pattern ${pattern}`);
 }
+assert.doesNotMatch(shellSource, /t\('ui\.settings_title'\)/, 'shell.js: settings_title references must be removed');
+assert.doesNotMatch(shellSource, /t\('ui\.settings_subtitle'\)/, 'shell.js: settings_subtitle references must be removed');
 console.log('shell.js: top action icons OK');
 
 console.log('\nAll self-tests passed ✓');

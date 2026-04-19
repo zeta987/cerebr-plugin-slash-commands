@@ -1,6 +1,6 @@
 [English](./README.md) | [繁體中文](./README.zh-TW.md) | [简体中文](./README.zh-CN.md)
 
-# Cerebr 外掛：Slash Commands（斜線指令）
+# Cerebr 外掛：Slash Commands（快捷指令）
 
 本儲存庫專用於開發 `slash-commands` Cerebr shell 外掛。
 

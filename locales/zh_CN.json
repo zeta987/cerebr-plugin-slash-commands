@@ -1,9 +1,7 @@
 {
   "language_label": "简体中文",
   "ui": {
-    "settings_title": "命令列表",
-    "settings_subtitle": "在这里管理自己的命令。点卡片即可编辑，按「新增命令」从空白开始。",
-    "menu_label": "命令列表",
+    "menu_label": "快捷命令",
     "menu_title": "管理命令",
     "button_aria_label": "管理命令",
     "list_empty": "还没有命令，点「新增命令」开始建立。",
@@ -46,7 +44,7 @@
     "error_json_parse": "JSON 解析失败：$1",
     "error_nothing_to_delete": "目前没有可删除的命令。",
     "error_nothing_to_save": "目前没有可保存的命令。",
-    "picker_empty": "目前没有符合的命令，可在一级菜单里的「命令列表」中管理。",
+    "picker_empty": "目前没有符合的命令，可在一级菜单里的「快捷命令」中管理。",
     "blank_command_name": "新命令 $1",
     "blank_command_prompt": "请在这里输入提示词。",
     "command_meta": "ID: $1  ·  创建于 $2  ·  更新于 $3",

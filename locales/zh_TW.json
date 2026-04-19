@@ -1,9 +1,7 @@
 {
   "language_label": "正體中文",
   "ui": {
-    "settings_title": "指令列表",
-    "settings_subtitle": "在這裡管理自己的指令。點卡片即可編輯，按「新增指令」從空白開始。",
-    "menu_label": "指令列表",
+    "menu_label": "快捷指令",
     "menu_title": "管理指令",
     "button_aria_label": "管理指令",
     "list_empty": "還沒有指令，點「新增指令」開始建立。",
@@ -46,7 +44,7 @@
     "error_json_parse": "JSON 解析失敗：$1",
     "error_nothing_to_delete": "目前沒有可刪除的指令。",
     "error_nothing_to_save": "目前沒有可儲存的指令。",
-    "picker_empty": "目前沒有符合的指令，可在一級選單裡的「指令列表」中管理。",
+    "picker_empty": "目前沒有符合的指令，可在一級選單裡的「快捷指令」中管理。",
     "blank_command_name": "新指令 $1",
     "blank_command_prompt": "請在這裡輸入提示詞。",
     "command_meta": "ID: $1  ·  建立於 $2  ·  更新於 $3",

@@ -583,7 +583,7 @@ function buildManageView() {
     const selectedCommand = getSelectedCommand();
     const editorTitle = runtimeState.editorMode === 'create'
         ? t('ui.create_command')
-        : (selectedCommand?.label || selectedCommand?.name || t('ui.settings_title'));
+        : (selectedCommand?.label || selectedCommand?.name || '');
     const editorDescription = runtimeState.editorMode === 'edit' && selectedCommand
         ? t('ui.command_meta', [
             selectedCommand.id,
@@ -606,7 +606,6 @@ function buildManageView() {
             },
             {
                 kind: 'card',
-                title: t('ui.settings_title'),
                 description: t('ui.status_count', [getCommands().length]),
                 body: [
                     {
@@ -791,9 +790,9 @@ function buildCurrentPage() {
             ? t('ui.import_json')
             : runtimeState.pageMode === 'export'
                 ? t('ui.export_json')
-                : t('ui.settings_title'),
+                : '',
         subtitle: runtimeState.pageMode === 'manage'
-            ? t('ui.settings_subtitle')
+            ? ''
             : t('ui.import_note'),
         viewStateKey: `${runtimeState.pageMode}:${runtimeState.editorMode}:${runtimeState.selectedCommandId || 'new'}:${runtimeState.pageViewRevision}`,
     };

@@ -1,6 +1,6 @@
 [English](./README.md) | [繁體中文](./README.zh-TW.md) | [简体中文](./README.zh-CN.md)
 
-# Cerebr 插件：Slash Commands（斜杠命令）
+# Cerebr 插件：Slash Commands（快捷命令）
 
 这个仓库是 `slash-commands` Cerebr shell 插件的专属开发仓库。
 
