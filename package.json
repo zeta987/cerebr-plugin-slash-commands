@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "node ./scripts/check-manifests.mjs ./plugin.json",
-    "selftest": "node ./helpers/__selftest__.mjs"
+    "selftest": "node ./helpers/__selftest__.mjs",
+    "package": "node ./scripts/package-plugin.mjs"
   }
 }

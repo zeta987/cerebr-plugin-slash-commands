@@ -16,6 +16,10 @@
 
 <img width="1199" height="689" alt="管理頁面 — 繁體中文語系" src="https://github.com/user-attachments/assets/33e2eede-446c-4c98-ab76-463841ed4960" />
 
+## 瀏覽器支援
+
+Release 的 zip 產物只針對 Chrome 版本的 Cerebr 打包，也就是安裝在 Chromium 核心瀏覽器裡的 Cerebr 擴充。本外掛實際測試過的環境只有 **Chrome** 與 **Brave**，其他瀏覽器（Firefox、Safari、Edge、Arc 等）尚未驗證，不保證相容性。
+
 ## 從 Release 安裝
 
 Cerebr 外掛管理只接受資料夾，安裝打包版本的流程如下：
@@ -64,6 +68,14 @@ npm run check
 ```bash
 npm run selftest
 ```
+
+快速打包一份可直接側載的資料夾到 `dist/lite-slash-commands/`：
+
+```bash
+npm run package
+```
+
+這個指令由 [`scripts/package-plugin.mjs`](./scripts/package-plugin.mjs) 驅動，會先跑 manifest 檢查與自我測試，再把 `plugin.json`、`shell.js`、`seed-prompts.json`、`helpers/`、`locales/` 複製到 `dist/lite-slash-commands/`。該資料夾可直接拖入 Cerebr 開發者模式側載，不需要額外壓縮。
 
 ## 手動測試
 

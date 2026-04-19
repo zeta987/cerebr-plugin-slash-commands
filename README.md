@@ -20,6 +20,10 @@ What the plugin itself handles is the data and management layer: it keeps an edi
 
 <img width="1203" height="683" alt="Management page — English locale" src="https://github.com/user-attachments/assets/256f9b44-ebf5-41f4-b000-03690ad59e4e" />
 
+## Browser support
+
+The release zip packages the plugin for the Chrome build of Cerebr — i.e. the Cerebr extension running inside a Chromium-based browser. The plugin has only been tested on **Chrome** and **Brave**; other browsers (Firefox, Safari, Edge, Arc, etc.) are not verified and compatibility is not guaranteed.
+
 ## Install from a release
 
 Cerebr's plugin manager only accepts folders, not zip archives. To install a packaged release:
@@ -68,6 +72,14 @@ Run the self-tests (no dependencies required):
 ```bash
 npm run selftest
 ```
+
+Package a sideload-ready folder into `dist/lite-slash-commands/`:
+
+```bash
+npm run package
+```
+
+Driven by [`scripts/package-plugin.mjs`](./scripts/package-plugin.mjs), this runs the manifest check and self-tests first, then copies `plugin.json`, `shell.js`, `seed-prompts.json`, `helpers/`, and `locales/` into `dist/lite-slash-commands/`. Drop that folder straight into Cerebr developer mode — no zipping required.
 
 ## Manual testing
 
