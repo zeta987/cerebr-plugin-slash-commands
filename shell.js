@@ -522,21 +522,25 @@ function createTopActions() {
     return [
         {
             id: 'create-command',
+            icon: '+',
             label: t('ui.create_command'),
             variant: 'primary',
         },
         {
             id: 'reset-defaults',
+            icon: '↺',
             label: t('ui.reset_defaults'),
             variant: 'warning',
             confirm: t('ui.reset_defaults'),
         },
         {
             id: 'open-import',
+            icon: '↓',
             label: t('ui.import_json'),
         },
         {
             id: 'open-export',
+            icon: '↑',
             label: t('ui.export_json'),
         },
     ];

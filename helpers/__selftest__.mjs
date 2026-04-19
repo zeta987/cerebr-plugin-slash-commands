@@ -54,4 +54,18 @@ for (const key of REQUIRED_SEED_KEYS) {
 }
 console.log('seed-prompts.json: schema OK');
 
+// --- management page action icons ---
+const shellJsPath = join(here, '..', 'shell.js');
+const shellSource = readFileSync(shellJsPath, 'utf8');
+const TOP_ACTION_ICON_PATTERNS = [
+    /\{[^{}]*id:\s*'create-command'[^{}]*icon:\s*'\+'[^{}]*\}/,
+    /\{[^{}]*id:\s*'reset-defaults'[^{}]*icon:\s*'↺'[^{}]*\}/,
+    /\{[^{}]*id:\s*'open-import'[^{}]*icon:\s*'↓'[^{}]*\}/,
+    /\{[^{}]*id:\s*'open-export'[^{}]*icon:\s*'↑'[^{}]*\}/,
+];
+for (const pattern of TOP_ACTION_ICON_PATTERNS) {
+    assert.match(shellSource, pattern, `shell.js: missing management action icon pattern ${pattern}`);
+}
+console.log('shell.js: top action icons OK');
+
 console.log('\nAll self-tests passed ✓');
