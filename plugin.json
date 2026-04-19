@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "id": "local.slash-commands",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "kind": "script",
   "scope": "shell",
   "displayName": "Slash Commands",
