@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { expandLanguagePlaceholders } from './language-placeholders.js';
+import { buildManageSections, toggleExpandedCommandId } from './manage-page-view.js';
 
 // --- language-placeholders.js ---
 assert.equal(expandLanguagePlaceholders('Reply in {{lang}}.', '正體中文'), 'Reply in 正體中文.');
@@ -24,7 +25,7 @@ const REQUIRED_UI_KEYS = [
     'save_changes','delete_command','field_name_label','field_prompt_label',
     'status_saved','error_name_required','error_prompt_required','picker_empty',
     'export_json','import_json','reset_defaults','more_menu',
-    'status_imported','status_count','error_json_parse',
+    'status_imported','status_count','error_json_parse','import_json_file',
 ];
 const REMOVED_UI_KEYS = ['settings_title', 'settings_subtitle'];
 const REQUIRED_SEED_KEYS = ['explain','translate','summarize','code_explain'];
@@ -58,6 +59,98 @@ for (const key of REQUIRED_SEED_KEYS) {
 }
 console.log('seed-prompts.json: schema OK');
 
+// --- manage-page-view.js ---
+assert.equal(toggleExpandedCommandId('', 'cmd-1'), 'cmd-1');
+assert.equal(toggleExpandedCommandId('cmd-1', 'cmd-1'), '');
+assert.equal(toggleExpandedCommandId('cmd-1', 'cmd-2'), 'cmd-2');
+
+const formatDate = (value) => `date:${value}`;
+const translate = (key, values = []) => `${key}:${values.join('|')}`;
+const commands = [
+    {
+        id: 'cmd-1',
+        name: 'alpha',
+        label: 'Alpha',
+        description: 'First',
+        prompt: 'Prompt A',
+        aliases: [],
+        createdAt: 1,
+        updatedAt: 2,
+    },
+    {
+        id: 'cmd-2',
+        name: 'beta',
+        label: '',
+        description: '',
+        prompt: 'Prompt B',
+        aliases: [],
+        createdAt: 3,
+        updatedAt: 4,
+    },
+];
+
+const manageSections = buildManageSections({
+    topActions: [{ id: 'create-command', label: 'Create' }],
+    commands,
+    expandedCommandId: 'cmd-2',
+    editorMode: 'edit',
+    editorValues: {
+        name: 'beta',
+        label: '',
+        aliases: '',
+        description: '',
+        prompt: 'Prompt B',
+    },
+    selectedCommand: commands[1],
+    currentLocale: 'en',
+    formatTimestamp: formatDate,
+    t: translate,
+});
+assert.equal(manageSections.length, 2, 'manage sections should include top actions plus one compact command stack card');
+assert.equal(manageSections[1].body.length, 5, 'command stack should keep rows compact and append editor blocks only once');
+assert.equal(manageSections[1].body[0].kind, 'list', 'first command row should render as a list block');
+assert.equal(manageSections[1].body[1].kind, 'list', 'second command row should render as a list block');
+assert.equal(manageSections[1].body[1].items[0].actionId, 'toggle-command', 'command rows should use toggle-command');
+assert.equal(manageSections[1].body[0].items[0].title, '/alpha', 'command rows should only show the slash command name');
+assert.equal(manageSections[1].body[0].items[0].description, '', 'command rows should not repeat the display label as description');
+assert.equal(manageSections[1].body[0].items[0].meta, '', 'command rows should not repeat the slash name as meta');
+assert.equal(manageSections[1].body[0].items[0].actions.length, 0, 'command rows should stay compact without inline action columns');
+assert.equal(manageSections[1].body[2].kind, 'note', 'expanded row should render inline note metadata');
+assert.equal(manageSections[1].body[3].kind, 'form', 'expanded row should render inline form');
+assert.equal(manageSections[1].body[4].kind, 'actions', 'expanded row should render inline actions');
+assert.equal(
+    manageSections[1].body[4].actions.some((action) => action.id === 'delete-current'),
+    true,
+    'expanded card should expose delete-current',
+);
+assert.equal(
+    manageSections[1].body[4].actions.some((action) => action.id === 'move-down'),
+    true,
+    'expanded editor should expose move actions instead of row-side action columns',
+);
+
+const draftSections = buildManageSections({
+    topActions: [{ id: 'create-command', label: 'Create' }],
+    commands: [],
+    expandedCommandId: '',
+    editorMode: 'create',
+    editorValues: {
+        name: '',
+        label: '',
+        aliases: '',
+        description: '',
+        prompt: '',
+    },
+    selectedCommand: null,
+    currentLocale: 'en',
+    formatTimestamp: formatDate,
+    t: translate,
+});
+assert.equal(draftSections.length, 2, 'empty command collection should still render a stack card');
+assert.equal(draftSections[1].body[0].kind, 'note', 'draft card should stay inside the command stack');
+assert.equal(draftSections[1].body[2].kind, 'actions', 'draft card should render inline actions without a shared editor');
+console.log('manage-page-view.js: layout OK');
+
 // --- management page action icons ---
 const shellJsPath = join(here, '..', 'shell.js');
 const shellSource = readFileSync(shellJsPath, 'utf8');
@@ -70,8 +163,13 @@ const TOP_ACTION_ICON_PATTERNS = [
 for (const pattern of TOP_ACTION_ICON_PATTERNS) {
     assert.match(shellSource, pattern, `shell.js: missing management action icon pattern ${pattern}`);
 }
+assert.match(shellSource, /\{[^{}]*id:\s*'apply-import'[^{}]*icon:\s*'↓'[^{}]*label:\s*t\('ui\.import_action'\)[^{}]*\}/, 'shell.js: import action should use icon plus label');
+assert.match(shellSource, /\{[^{}]*id:\s*'apply-import-file'[^{}]*icon:\s*'📎'[^{}]*label:\s*t\('ui\.import_json_file'\)[^{}]*\}/, 'shell.js: import file action should use paperclip icon and file label');
+assert.match(shellSource, /\{[^{}]*id:\s*'back-manage'[^{}]*icon:\s*'←'[^{}]*label:\s*t\('ui\.back_to_list'\)[^{}]*\}/, 'shell.js: back action should use icon plus label');
+assert.doesNotMatch(shellSource, /id:\s*'copy-export'/, 'shell.js: export copy action must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_title'\)/, 'shell.js: settings_title references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_subtitle'\)/, 'shell.js: settings_subtitle references must be removed');
+assert.doesNotMatch(shellSource, /status_reordered/, 'shell.js: reorder success toasts must be removed');
 console.log('shell.js: top action icons OK');
 
 console.log('\nAll self-tests passed ✓');

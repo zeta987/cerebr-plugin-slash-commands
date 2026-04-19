@@ -5,6 +5,7 @@ import {
     getSeedCommandMeta,
 } from './helpers/plugin-i18n.js';
 import { expandLanguagePlaceholders } from './helpers/language-placeholders.js';
+import { buildManageSections, toggleExpandedCommandId } from './helpers/manage-page-view.js';
 import seedPromptsSource from './seed-prompts.json' with { type: 'json' };
 
 const STORAGE_KEY = 'cerebr_plugin_lite_slash_commands_v1';
@@ -348,6 +349,7 @@ const runtimeState = {
     pageMode: 'manage',
     pageOpen: false,
     pageViewRevision: 0,
+    expandedCommandId: '',
     selectedCommandId: '',
     stopHandles: [],
 };
@@ -363,30 +365,50 @@ function getSelectedCommand() {
 function ensureEditorSelection() {
     const commands = getCommands();
     if (runtimeState.editorMode === 'create') {
+        runtimeState.selectedCommandId = '';
+        runtimeState.expandedCommandId = '';
         runtimeState.editorValues = cloneFieldValues(runtimeState.editorValues);
         return;
     }
 
     const selected = getSelectedCommand();
     if (selected) {
+        if (
+            runtimeState.expandedCommandId
+            && !commands.some((command) => command.id === runtimeState.expandedCommandId)
+        ) {
+            runtimeState.expandedCommandId = selected.id;
+        }
         runtimeState.editorValues = commandToFormValues(selected);
         return;
     }
 
     if (commands[0]) {
         runtimeState.selectedCommandId = commands[0].id;
+        runtimeState.expandedCommandId = commands[0].id;
         runtimeState.editorMode = 'edit';
         runtimeState.editorValues = commandToFormValues(commands[0]);
         return;
     }
 
     runtimeState.selectedCommandId = '';
+    runtimeState.expandedCommandId = '';
     runtimeState.editorMode = 'create';
     runtimeState.editorValues = createBlankCommandValues(1);
 }
 
+function collapseEditor() {
+    const selected = getSelectedCommand();
+    runtimeState.expandedCommandId = '';
+    if (selected) {
+        runtimeState.editorValues = commandToFormValues(selected);
+    }
+    runtimeState.pageViewRevision += 1;
+}
+
 function beginCreateCommand() {
     runtimeState.selectedCommandId = '';
+    runtimeState.expandedCommandId = '';
     runtimeState.editorMode = 'create';
     runtimeState.editorValues = createBlankCommandValues(getCommands().length + 1);
     runtimeState.pageViewRevision += 1;
@@ -407,6 +429,7 @@ async function createCommandAndEdit() {
     });
 
     runtimeState.selectedCommandId = newCommand.id;
+    runtimeState.expandedCommandId = newCommand.id;
     runtimeState.editorMode = 'edit';
     runtimeState.editorValues = commandToFormValues(newCommand);
     runtimeState.pageViewRevision += 1;
@@ -425,6 +448,7 @@ function beginEditCommand(commandId) {
     }
 
     runtimeState.selectedCommandId = command.id;
+    runtimeState.expandedCommandId = command.id;
     runtimeState.editorMode = 'edit';
     runtimeState.editorValues = commandToFormValues(command);
     runtimeState.pageViewRevision += 1;
@@ -546,144 +570,19 @@ function createTopActions() {
     ];
 }
 
-function createCommandListItems() {
-    const commands = getCommands();
-    return commands.map((command, index) => ({
-        id: command.id,
-        title: command.label || command.name,
-        description: command.description || `/${command.name}`,
-        meta: `/${command.name}`,
-        selected: runtimeState.editorMode === 'edit' && runtimeState.selectedCommandId === command.id,
-        actionId: 'select-command',
-        actions: [
-            {
-                id: 'move-up',
-                icon: '↑',
-                title: t('ui.move_up'),
-                disabled: index === 0,
-            },
-            {
-                id: 'move-down',
-                icon: '↓',
-                title: t('ui.move_down'),
-                disabled: index === commands.length - 1,
-            },
-            {
-                id: 'delete-command',
-                icon: '🗑',
-                title: t('ui.delete_command'),
-                variant: 'danger',
-                confirm: t('ui.delete_command'),
-            },
-        ],
-    }));
-}
-
 function buildManageView() {
-    const selectedCommand = getSelectedCommand();
-    const editorTitle = runtimeState.editorMode === 'create'
-        ? t('ui.create_command')
-        : (selectedCommand?.label || selectedCommand?.name || '');
-    const editorDescription = runtimeState.editorMode === 'edit' && selectedCommand
-        ? t('ui.command_meta', [
-            selectedCommand.id,
-            formatTimestamp(selectedCommand.createdAt, runtimeState.currentLocale),
-            formatTimestamp(selectedCommand.updatedAt, runtimeState.currentLocale),
-        ])
-        : '';
-
     return {
-        sections: [
-            {
-                kind: 'card',
-                variant: 'subtle',
-                body: [
-                    {
-                        kind: 'actions',
-                        actions: createTopActions(),
-                    },
-                ],
-            },
-            {
-                kind: 'card',
-                description: t('ui.status_count', [getCommands().length]),
-                body: [
-                    {
-                        kind: 'list',
-                        emptyText: t('ui.list_empty'),
-                        items: createCommandListItems(),
-                    },
-                    {
-                        kind: 'note',
-                        title: editorTitle,
-                        text: editorDescription,
-                        tone: 'muted',
-                    },
-                    {
-                        kind: 'form',
-                        fields: [
-                            {
-                                id: 'name',
-                                label: t('ui.field_name_label'),
-                                type: 'text',
-                                value: runtimeState.editorValues.name,
-                                placeholder: t('ui.field_name_placeholder'),
-                            },
-                            {
-                                id: 'label',
-                                label: t('ui.field_label_label'),
-                                type: 'text',
-                                value: runtimeState.editorValues.label,
-                                placeholder: t('ui.field_label_placeholder'),
-                            },
-                            {
-                                id: 'aliases',
-                                label: t('ui.field_aliases_label'),
-                                type: 'textarea',
-                                value: runtimeState.editorValues.aliases,
-                                placeholder: t('ui.field_aliases_placeholder'),
-                                description: t('ui.field_aliases_note'),
-                                rows: 3,
-                            },
-                            {
-                                id: 'description',
-                                label: t('ui.field_description_label'),
-                                type: 'textarea',
-                                value: runtimeState.editorValues.description,
-                                placeholder: t('ui.field_description_placeholder'),
-                                rows: 3,
-                            },
-                            {
-                                id: 'prompt',
-                                label: t('ui.field_prompt_label'),
-                                type: 'textarea',
-                                value: runtimeState.editorValues.prompt,
-                                placeholder: t('ui.field_prompt_placeholder'),
-                                rows: 10,
-                                span: 2,
-                            },
-                        ],
-                    },
-                    {
-                        kind: 'actions',
-                        actions: [
-                            {
-                                id: 'save-command',
-                                label: t('ui.save_changes'),
-                                variant: 'primary',
-                            },
-                            {
-                                id: 'delete-current',
-                                label: t('ui.delete_command'),
-                                variant: 'danger',
-                                disabled: runtimeState.editorMode !== 'edit',
-                                confirm: t('ui.delete_command'),
-                            },
-                        ],
-                    },
-                ],
-            },
-        ],
+        sections: buildManageSections({
+            topActions: createTopActions(),
+            commands: getCommands(),
+            expandedCommandId: runtimeState.expandedCommandId,
+            editorMode: runtimeState.editorMode,
+            editorValues: runtimeState.editorValues,
+            selectedCommand: getSelectedCommand(),
+            currentLocale: runtimeState.currentLocale,
+            formatTimestamp,
+            t,
+        }),
     };
 }
 
@@ -714,18 +613,21 @@ function buildImportView() {
                         actions: [
                             {
                                 id: 'apply-import',
+                                icon: '↓',
                                 label: t('ui.import_action'),
                                 variant: 'primary',
                             },
                             {
                                 id: 'apply-import-file',
-                                icon: '📄',
-                                title: t('ui.import_json'),
+                                icon: '📎',
+                                label: t('ui.import_json_file'),
+                                title: t('ui.import_json_file'),
                                 kind: 'file',
                                 accept: '.json,application/json',
                             },
                             {
                                 id: 'back-manage',
+                                icon: '←',
                                 label: t('ui.back_to_list'),
                             },
                         ],
@@ -766,12 +668,8 @@ function buildExportView() {
                         kind: 'actions',
                         actions: [
                             {
-                                id: 'copy-export',
-                                label: t('ui.export_action'),
-                                variant: 'primary',
-                            },
-                            {
                                 id: 'back-manage',
+                                icon: '←',
                                 label: t('ui.back_to_list'),
                             },
                         ],
@@ -794,7 +692,7 @@ function buildCurrentPage() {
         subtitle: runtimeState.pageMode === 'manage'
             ? ''
             : t('ui.import_note'),
-        viewStateKey: `${runtimeState.pageMode}:${runtimeState.editorMode}:${runtimeState.selectedCommandId || 'new'}:${runtimeState.pageViewRevision}`,
+        viewStateKey: `${runtimeState.pageMode}:${runtimeState.editorMode}:${runtimeState.selectedCommandId || 'new'}:${runtimeState.expandedCommandId || 'collapsed'}:${runtimeState.pageViewRevision}`,
     };
 
     if (runtimeState.pageMode === 'import') {
@@ -852,7 +750,6 @@ async function moveCommand(commandId, delta) {
         commands,
     });
     beginEditCommand(command.id);
-    runtimeState.api.ui.showToast(t('ui.status_reordered', [command.name]));
     await renderCurrentPage({ resetViewState: true });
     return true;
 }
@@ -946,16 +843,6 @@ async function importEnvelopeFromText(rawText) {
     await renderCurrentPage({ resetViewState: true, reopen: true });
 }
 
-async function copyExportText(text) {
-    const payload = String(text ?? buildExportText());
-    try {
-        await navigator.clipboard.writeText(payload);
-        runtimeState.api.ui.showToast(t('ui.status_exported_copied'));
-    } catch {
-        runtimeState.api.ui.showToast(t('ui.status_exported_textarea'));
-    }
-}
-
 function updateDraftValues(values = {}) {
     runtimeState.editorValues = cloneFieldValues({
         ...runtimeState.editorValues,
@@ -966,6 +853,7 @@ function updateDraftValues(values = {}) {
 async function handleManageAction(event) {
     const actionId = normalizeString(event?.actionId);
     const itemId = normalizeString(event?.itemId);
+    const targetCommandId = itemId || runtimeState.selectedCommandId;
     const values = event?.values && typeof event.values === 'object' ? event.values : {};
 
     if (actionId === 'create-command') {
@@ -994,24 +882,29 @@ async function handleManageAction(event) {
         return;
     }
 
-    if (actionId === 'select-command') {
-        beginEditCommand(itemId);
+    if (actionId === 'toggle-command') {
+        const nextExpandedCommandId = toggleExpandedCommandId(runtimeState.expandedCommandId, itemId);
+        if (!nextExpandedCommandId) {
+            collapseEditor();
+        } else {
+            beginEditCommand(nextExpandedCommandId);
+        }
         await renderCurrentPage({ resetViewState: true });
         return;
     }
 
     if (actionId === 'move-up') {
-        await moveCommand(itemId, -1);
+        await moveCommand(targetCommandId, -1);
         return;
     }
 
     if (actionId === 'move-down') {
-        await moveCommand(itemId, 1);
+        await moveCommand(targetCommandId, 1);
         return;
     }
 
     if (actionId === 'delete-command') {
-        await deleteCommand(itemId);
+        await deleteCommand(targetCommandId);
         return;
     }
 
@@ -1055,12 +948,6 @@ async function handleExportAction(event) {
         runtimeState.pageViewRevision += 1;
         ensureEditorSelection();
         await renderCurrentPage({ resetViewState: true, reopen: true });
-        return;
-    }
-
-    if (actionId === 'copy-export') {
-        const values = event?.values && typeof event.values === 'object' ? event.values : {};
-        await copyExportText(values['export-json'] ?? runtimeState.importText);
     }
 }
 
