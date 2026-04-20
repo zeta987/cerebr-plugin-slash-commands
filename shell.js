@@ -353,7 +353,50 @@ const runtimeState = {
     expandedCommandId: '',
     selectedCommandId: '',
     stopHandles: [],
+    pendingDraftTimer: null,
+    injectedStyle: null,
 };
+
+const INLINE_BODY_STYLE_ID = 'lite-slash-commands-inline-body-layout';
+const INLINE_BODY_STYLE_CSS = `
+.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) {
+    flex-direction: column;
+    align-items: stretch;
+}
+.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__row,
+.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__body {
+    box-sizing: border-box;
+    width: 100%;
+}
+.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__body {
+    padding-top: 18px;
+    padding-bottom: 18px;
+}
+`;
+
+function injectInlineBodyStyles() {
+    if (typeof document === 'undefined' || runtimeState.injectedStyle) {
+        return;
+    }
+    const existing = document.getElementById(INLINE_BODY_STYLE_ID);
+    if (existing) {
+        runtimeState.injectedStyle = existing;
+        return;
+    }
+    const style = document.createElement('style');
+    style.id = INLINE_BODY_STYLE_ID;
+    style.textContent = INLINE_BODY_STYLE_CSS;
+    document.head.appendChild(style);
+    runtimeState.injectedStyle = style;
+}
+
+function removeInlineBodyStyles() {
+    const style = runtimeState.injectedStyle;
+    runtimeState.injectedStyle = null;
+    if (style && style.parentNode) {
+        style.parentNode.removeChild(style);
+    }
+}
 
 function getCommands() {
     return runtimeState.commandEnvelope?.commands || [];
@@ -796,29 +839,61 @@ async function deleteCommand(commandId) {
     return true;
 }
 
-async function saveCurrentCommand(values) {
-    const sourceValues = cloneFieldValues(values || runtimeState.editorValues);
-    const existing = runtimeState.editorMode === 'edit' ? getSelectedCommand() : null;
-    const nextCommand = readCommandFromValues(sourceValues, existing);
-    const commands = [...getCommands()];
-
-    if (runtimeState.editorMode === 'edit' && existing) {
-        const index = commands.findIndex((command) => command.id === existing.id);
-        if (index >= 0) {
-            commands[index] = nextCommand;
-        }
-    } else {
-        commands.push(nextCommand);
+async function persistEditorDraft() {
+    if (runtimeState.editorMode !== 'edit' || !runtimeState.selectedCommandId) {
+        return;
     }
 
-    await persistEnvelope({
+    const existing = getSelectedCommand();
+    if (!existing) {
+        return;
+    }
+
+    let nextCommand;
+    try {
+        nextCommand = readCommandFromValues(
+            cloneFieldValues(runtimeState.editorValues),
+            existing,
+        );
+    } catch {
+        return;
+    }
+
+    const commands = getCommands().map((command) => (
+        command.id === existing.id ? nextCommand : command
+    ));
+    const nextEnvelope = normalizeEnvelope({
         ...runtimeState.commandEnvelope,
         commands,
+    }, {
+        fallbackInitializedAt: runtimeState.commandEnvelope?.meta?.initializedAt || Date.now(),
     });
-    beginEditCommand(nextCommand.id);
-    collapseEditor();
-    runtimeState.api.ui.showToast(t('ui.status_saved', [nextCommand.name]));
-    await renderCurrentPage({ resetViewState: true });
+    nextEnvelope.meta = {
+        ...nextEnvelope.meta,
+        userManagedAt: Date.now(),
+    };
+    runtimeState.commandEnvelope = nextEnvelope;
+    await writeStoredEnvelope(nextEnvelope);
+    await syncSlashCommands();
+}
+
+function schedulePersistDraft() {
+    if (runtimeState.pendingDraftTimer) {
+        clearTimeout(runtimeState.pendingDraftTimer);
+    }
+    runtimeState.pendingDraftTimer = setTimeout(() => {
+        runtimeState.pendingDraftTimer = null;
+        persistEditorDraft().catch(() => {});
+    }, 500);
+}
+
+async function flushPendingDraft() {
+    if (!runtimeState.pendingDraftTimer) {
+        return;
+    }
+    clearTimeout(runtimeState.pendingDraftTimer);
+    runtimeState.pendingDraftTimer = null;
+    await persistEditorDraft();
 }
 
 async function resetDefaults() {
@@ -890,10 +965,12 @@ function restoreEditorSnapshot(snapshot) {
 }
 
 async function handleManageAction(event) {
+    await flushPendingDraft();
+
     const actionId = normalizeString(event?.actionId);
     const itemId = normalizeString(event?.itemId);
-    const targetCommandId = itemId || runtimeState.selectedCommandId;
-    const values = event?.values && typeof event.values === 'object' ? event.values : {};
+    const dataCommandId = normalizeString(event?.action?.data?.commandId);
+    const targetCommandId = dataCommandId || itemId || runtimeState.selectedCommandId;
 
     if (actionId === 'create-command') {
         await createCommandAndEdit();
@@ -944,20 +1021,12 @@ async function handleManageAction(event) {
 
     if (actionId === 'delete-command') {
         await deleteCommand(targetCommandId);
-        return;
-    }
-
-    if (actionId === 'save-command') {
-        await saveCurrentCommand(values);
-        return;
-    }
-
-    if (actionId === 'delete-current' && runtimeState.selectedCommandId) {
-        await deleteCommand(runtimeState.selectedCommandId);
     }
 }
 
 async function handleImportAction(event) {
+    await flushPendingDraft();
+
     const actionId = normalizeString(event?.actionId);
     if (actionId === 'back-manage') {
         runtimeState.pageMode = 'manage';
@@ -980,6 +1049,8 @@ async function handleImportAction(event) {
 }
 
 async function handleExportAction(event) {
+    await flushPendingDraft();
+
     const actionId = normalizeString(event?.actionId);
     if (actionId === 'back-manage') {
         runtimeState.pageMode = 'manage';
@@ -1006,6 +1077,9 @@ async function handlePageEvent(event = {}) {
             updateDraftValues({
                 [event.fieldId]: event.value,
             });
+            if (runtimeState.editorMode === 'edit') {
+                schedulePersistDraft();
+            }
             return;
         }
 
@@ -1052,6 +1126,8 @@ async function handlePageEvent(event = {}) {
 }
 
 async function reloadLocale(locale) {
+    await flushPendingDraft();
+
     runtimeState.currentLocale = normalizeString(locale, 'en');
     await loadPluginLocale(runtimeState.currentLocale);
 
@@ -1084,6 +1160,8 @@ export default {
         runtimeState.currentLocale = await Promise.resolve(api.i18n?.getLocale?.());
         await loadPluginLocale(runtimeState.currentLocale || 'en');
 
+        injectInlineBodyStyles();
+
         runtimeState.commandEnvelope = await loadInitialEnvelope();
         ensureEditorSelection();
         await syncSlashCommands();
@@ -1107,6 +1185,8 @@ export default {
         runtimeState.stopHandles = [stopMenuActions, stopPageEvents, stopLocale].filter(Boolean);
 
         return async () => {
+            await flushPendingDraft();
+
             while (runtimeState.stopHandles.length > 0) {
                 const stop = runtimeState.stopHandles.pop();
                 try {
@@ -1121,6 +1201,8 @@ export default {
             if (runtimeState.pageOpen) {
                 await api.shell.closePage?.('stop');
             }
+
+            removeInlineBodyStyles();
         };
     },
 };

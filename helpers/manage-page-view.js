@@ -40,23 +40,6 @@ function createEditorFields(editorValues, t) {
     ];
 }
 
-function createEditorActions({ editorMode, t }) {
-    return [
-        {
-            id: 'save-command',
-            label: t('ui.save_changes'),
-            variant: 'primary',
-        },
-        {
-            id: 'delete-current',
-            label: t('ui.delete_command'),
-            variant: 'danger',
-            disabled: editorMode !== 'edit',
-            confirm: t('ui.delete_command'),
-        },
-    ];
-}
-
 function createExpandedEditorBody({
     command,
     editorMode,
@@ -88,27 +71,50 @@ function createExpandedEditorBody({
             columns: 1,
             fields: createEditorFields(editorValues, t),
         },
-        {
-            kind: 'actions',
-            actions: createEditorActions({ editorMode, t }),
-        },
     ];
 }
 
 function createCommandRowItem({
     command,
     expandedCommandId,
+    editorMode,
+    editorValues,
+    selectedCommand,
+    currentLocale,
+    formatTimestamp,
+    t,
 }) {
     const expanded = expandedCommandId === command.id;
-    return {
+    const item = {
         id: command.id,
         title: command.name,
         description: '',
         meta: '',
         selected: expanded,
         actionId: 'toggle-command',
-        actions: [],
+        actions: [
+            {
+                id: 'delete-command',
+                icon: '🗑',
+                title: t('ui.delete_command'),
+                variant: 'danger',
+                data: { commandId: command.id },
+            },
+        ],
     };
+
+    if (expanded && selectedCommand && selectedCommand.id === command.id) {
+        item.body = createExpandedEditorBody({
+            command: selectedCommand,
+            editorMode,
+            editorValues,
+            currentLocale,
+            formatTimestamp,
+            t,
+        });
+    }
+
+    return item;
 }
 
 export function toggleExpandedCommandId(currentExpandedCommandId, commandId) {
@@ -160,39 +166,6 @@ export function buildManageSections({
         return sections;
     }
 
-    if (expandedCommandId) {
-        const stackBody = [];
-        commands.forEach((command) => {
-            stackBody.push({
-                kind: 'list',
-                items: [
-                    createCommandRowItem({
-                        command,
-                        expandedCommandId,
-                    }),
-                ],
-            });
-
-            if (command.id === expandedCommandId) {
-                stackBody.push(...createExpandedEditorBody({
-                    command: selectedCommand,
-                    editorMode,
-                    editorValues,
-                    currentLocale,
-                    formatTimestamp,
-                    t,
-                }));
-            }
-        });
-
-        sections.push({
-            kind: 'card',
-            body: stackBody,
-        });
-
-        return sections;
-    }
-
     sections.push({
         kind: 'card',
         body: [
@@ -203,6 +176,12 @@ export function buildManageSections({
                 items: commands.map((command) => createCommandRowItem({
                     command,
                     expandedCommandId,
+                    editorMode,
+                    editorValues,
+                    selectedCommand,
+                    currentLocale,
+                    formatTimestamp,
+                    t,
                 })),
             },
         ],

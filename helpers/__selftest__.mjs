@@ -23,8 +23,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const localesDir = join(here, '..', 'locales');
 const REQUIRED_UI_KEYS = [
     'list_empty','create_command','back_to_list',
-    'save_changes','delete_command','field_name_label','field_prompt_label',
-    'status_saved','error_name_required','error_prompt_required','picker_empty',
+    'delete_command','field_name_label','field_prompt_label',
+    'error_name_required','error_prompt_required','picker_empty',
     'export_json','import_json','reset_defaults','more_menu',
     'status_imported','status_count','error_json_parse','import_json_file',
 ];
@@ -33,6 +33,9 @@ const REMOVED_UI_KEYS = [
     'settings_subtitle',
     'field_label_label',
     'field_label_placeholder',
+    'save_changes',
+    'status_saved',
+    'error_nothing_to_save',
 ];
 const REQUIRED_SEED_KEYS = ['explain','translate','summarize','code_explain'];
 
@@ -112,40 +115,41 @@ const manageSections = buildManageSections({
     formatTimestamp: formatDate,
     t: translate,
 });
-assert.equal(manageSections.length, 2, 'manage sections should include top actions plus one sortable command list card');
-assert.equal(manageSections[1].body.length, 5, 'expanded command stack should insert the editor directly after the selected row');
-assert.equal(manageSections[1].body[0].kind, 'list', 'first command row should still render as a host list block');
-assert.equal(manageSections[1].body[1].kind, 'list', 'selected command row should stay in its own list block');
-assert.equal(manageSections[1].body[1].items[0].actionId, 'toggle-command', 'command rows should use toggle-command');
-assert.equal(manageSections[1].body[0].items[0].token ?? '', '', 'command rows should not render a separate slash token');
-assert.equal(manageSections[1].body[0].items[0].title, 'alpha', 'command rows should show only the command name without the slash prefix');
-assert.equal(manageSections[1].body[0].items[0].description, '', 'command rows should not duplicate the command with extra description text');
-assert.equal(manageSections[1].body[0].items[0].meta, '', 'command rows should not repeat the slash name as meta');
-assert.equal(manageSections[1].body[0].items[0].actions.length, 0, 'command rows should stay compact without inline action columns');
-assert.equal(manageSections[1].body[1].items[0].body?.length ?? 0, 0, 'expanded rows should not inline body content that gets pushed into a right-side column');
-assert.equal(manageSections[1].body[2].kind, 'note', 'expanded editor note should render directly after the selected row');
-assert.equal(manageSections[1].body[3].kind, 'form', 'expanded editor form should render directly after the selected row');
-assert.equal(manageSections[1].body[4].kind, 'actions', 'expanded editor actions should render directly after the selected row');
-assert.equal(manageSections[1].body[3].columns, 1, 'expanded editor form should use a single column so it expands downward');
+assert.equal(manageSections.length, 2, 'expanded state should inline the editor inside the expanded row, not a sibling card');
+assert.equal(manageSections[1].body.length, 1, 'list card should stay a single sortable list regardless of expanded state');
+const listSection = manageSections[1].body[0];
+assert.equal(listSection.kind, 'list', 'list card body should be a host list section');
+assert.equal(listSection.sortable, true, 'manage list should stay sortable even when a row is expanded');
+assert.equal(listSection.id, 'slash-commands', 'manage list id should stay stable for host reorder events');
+assert.equal(listSection.items.length, 2, 'manage list should contain every command row');
+
+const [collapsedRow, selectedRow] = listSection.items;
+assert.equal(collapsedRow.actionId, 'toggle-command', 'command rows should use toggle-command');
+assert.equal(collapsedRow.title, 'alpha', 'command rows should show only the command name');
+assert.equal(collapsedRow.description, '', 'command rows should not duplicate command info as description');
+assert.equal(collapsedRow.meta, '', 'command rows should not duplicate command info as meta');
+assert.equal(collapsedRow.actions.length, 1, 'command rows should expose exactly one trailing action');
+assert.equal(collapsedRow.actions[0].id, 'delete-command', 'trailing action should be the delete entry');
+assert.equal(collapsedRow.actions[0].variant, 'danger', 'delete action should use the danger variant');
+assert.equal(collapsedRow.actions[0].data?.commandId, 'cmd-1', 'delete action should carry the commandId in data');
+assert.equal(collapsedRow.actions[0].confirm, undefined, 'delete action should not ship with a confirm prompt');
+assert.equal(collapsedRow.body, undefined, 'non-expanded rows should stay body-less');
+assert.equal(collapsedRow.selected, false, 'non-expanded rows should not be selected');
+assert.equal(selectedRow.selected, true, 'expanded command row should flag itself as selected');
+assert.ok(Array.isArray(selectedRow.body), 'expanded command row should carry an inline editor body');
+assert.equal(selectedRow.body.length, 2, 'expanded row body should contain note + form only (no action buttons)');
+assert.equal(selectedRow.body[0].kind, 'note', 'expanded row body first section should be the meta note');
+assert.equal(selectedRow.body[1].kind, 'form', 'expanded row body second section should be the editor form');
+assert.equal(selectedRow.body[1].columns, 1, 'expanded row editor form should use a single column');
 assert.deepEqual(
-    manageSections[1].body[3].fields.map((field) => field.id),
+    selectedRow.body[1].fields.map((field) => field.id),
     ['name', 'aliases', 'description', 'prompt'],
-    'expanded editor should hide the display title field and keep only four editor fields',
+    'expanded row editor should keep only the four editor fields',
 );
 assert.equal(
-    manageSections[1].body[4].actions.some((action) => action.id === 'delete-current'),
-    true,
-    'expanded card should expose delete-current',
-);
-assert.equal(
-    manageSections[1].body[4].actions.some((action) => action.id === 'move-down'),
+    selectedRow.body.some((section) => section.kind === 'actions'),
     false,
-    'expanded editor should no longer expose move-down',
-);
-assert.equal(
-    manageSections[1].body[4].actions.some((action) => action.id === 'move-up'),
-    false,
-    'expanded editor should no longer expose move-up',
+    'expanded row body should no longer contain a save/delete action bar',
 );
 
 assert.deepEqual(
@@ -176,14 +180,20 @@ const draftSections = buildManageSections({
     formatTimestamp: formatDate,
     t: translate,
 });
-assert.equal(draftSections.length, 2, 'empty command collection should still render a stack card');
-assert.equal(draftSections[1].body[0].kind, 'note', 'draft card should stay inside the command stack');
+assert.equal(draftSections.length, 2, 'empty command collection should render top actions + placeholder editor card only');
+assert.equal(draftSections[1].body.length, 2, 'empty state card should render note + form without an action row');
+assert.equal(draftSections[1].body[0].kind, 'note', 'empty state first section should be the meta note');
+assert.equal(draftSections[1].body[1].kind, 'form', 'empty state second section should be the editor form');
 assert.deepEqual(
     draftSections[1].body[1].fields.map((field) => field.id),
     ['name', 'aliases', 'description', 'prompt'],
-    'draft editor should hide the display title field and keep only four editor fields',
+    'draft editor should keep only the four editor fields',
 );
-assert.equal(draftSections[1].body[2].kind, 'actions', 'draft card should render inline actions without a shared editor');
+assert.equal(
+    draftSections[1].body.some((section) => section.kind === 'actions'),
+    false,
+    'empty state body should no longer expose a save/delete action bar',
+);
 
 const collapsedSections = buildManageSections({
     topActions: [{ id: 'create-command', label: 'Create' }],
@@ -202,11 +212,22 @@ const collapsedSections = buildManageSections({
     formatTimestamp: formatDate,
     t: translate,
 });
+assert.equal(collapsedSections.length, 2, 'collapsed state should have no trailing editor card');
 assert.equal(collapsedSections[1].body.length, 1, 'collapsed state should keep a single sortable list');
 assert.equal(collapsedSections[1].body[0].sortable, true, 'collapsed command stack should stay sortable');
+assert.ok(
+    collapsedSections[1].body[0].items.every((item) => item.body === undefined),
+    'collapsed state rows should stay body-less (no expanded editor anywhere)',
+);
+assert.ok(
+    collapsedSections[1].body[0].items.every(
+        (item) => item.actions.length === 1 && item.actions[0].id === 'delete-command' && item.actions[0].confirm === undefined,
+    ),
+    'every row should expose an immediate (no-confirm) delete action',
+);
 console.log('manage-page-view.js: layout OK');
 
-// --- management page action icons ---
+// --- shell.js contract checks ---
 const shellJsPath = join(here, '..', 'shell.js');
 const shellSource = readFileSync(shellJsPath, 'utf8');
 const TOP_ACTION_ICON_PATTERNS = [
@@ -231,15 +252,26 @@ assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?title
 assert.doesNotMatch(shellSource, /function buildExportView\(\)\s*\{[\s\S]*?description:\s*t\('ui\.import_note'\)/, 'shell.js: export view card should not repeat the host page subtitle');
 assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?label:\s*command\.description \|\| ''/, 'shell.js: slash picker right-side label should reuse command.description');
 assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\]\) \{[\s\S]*?description:\s*''/, 'shell.js: slash picker lower description line should stay empty');
-assert.match(shellSource, /async function saveCurrentCommand\(values\) \{[\s\S]*?beginEditCommand\(nextCommand\.id\);\s*collapseEditor\(\);/, 'shell.js: saving a command should collapse the editor after selecting the saved command');
+assert.match(shellSource, /async function persistEditorDraft\(\) \{/, 'shell.js: persistEditorDraft helper should drive debounced autosave');
+assert.match(shellSource, /function schedulePersistDraft\(\) \{/, 'shell.js: schedulePersistDraft helper should debounce editor change events');
+assert.match(shellSource, /async function flushPendingDraft\(\) \{/, 'shell.js: flushPendingDraft helper should let action handlers force-drain the pending timer');
+assert.match(shellSource, /function injectInlineBodyStyles\(\) \{/, 'shell.js: injectInlineBodyStyles helper should stack drag-handle row and editor body vertically');
+assert.match(shellSource, /function removeInlineBodyStyles\(\) \{/, 'shell.js: removeInlineBodyStyles helper should clean up on plugin unload');
+assert.match(shellSource, /cerebr-plugin-page-list__item:has\(>\s*\.cerebr-plugin-page-list__body\)/, 'shell.js: inline body CSS should target only items that actually have a body');
+assert.match(shellSource, /injectInlineBodyStyles\(\);/, 'shell.js: setup should inject the inline body layout styles');
+assert.match(shellSource, /removeInlineBodyStyles\(\);/, 'shell.js: cleanup should remove the injected styles');
 assert.match(shellSource, /if \(event\?\.type === 'reorder' && event\.listId === 'slash-commands'\)/, 'shell.js: manage page should handle host reorder events for slash-commands');
 assert.match(shellSource, /await reorderCommands\(Array\.isArray\(event\.orderedItemIds\) \? event\.orderedItemIds : \[\], values\);/, 'shell.js: reorder handler should forward live form values so drafts survive drag sorting');
+assert.doesNotMatch(shellSource, /async function saveCurrentCommand\b/, 'shell.js: manual save helper should be removed in favor of autosave');
+assert.doesNotMatch(shellSource, /ui\.status_saved/, 'shell.js: saved toast reference should be removed');
+assert.doesNotMatch(shellSource, /'save-command'/, 'shell.js: save-command action id should be removed');
+assert.doesNotMatch(shellSource, /'delete-current'/, 'shell.js: delete-current action id should be removed');
 assert.doesNotMatch(shellSource, /id:\s*'copy-export'/, 'shell.js: export copy action must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_title'\)/, 'shell.js: settings_title references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.settings_subtitle'\)/, 'shell.js: settings_subtitle references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.field_label_label'\)/, 'shell.js: display title label references must be removed');
 assert.doesNotMatch(shellSource, /t\('ui\.field_label_placeholder'\)/, 'shell.js: display title placeholder references must be removed');
 assert.doesNotMatch(shellSource, /status_reordered/, 'shell.js: reorder success toasts must be removed');
-console.log('shell.js: top action icons OK');
+console.log('shell.js: contract OK');
 
 console.log('\nAll self-tests passed ✓');
