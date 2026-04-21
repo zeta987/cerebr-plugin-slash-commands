@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "id": "local.slash-commands",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "kind": "script",
   "scope": "shell",
   "displayName": "Slash Commands",
@@ -40,7 +40,7 @@
     "shell.ready"
   ],
   "compatibility": {
-    "versionRange": ">=2.5.6 <3.0.0"
+    "versionRange": ">=2.5.9 <3.0.0"
   },
   "script": {
     "entry": "./shell.js"
