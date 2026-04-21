@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.2] - 2026-04-21
+
+### Added
+
+- Added drag-and-drop sorting support to the command management page with inline host drag feedback, larger drag handles, and emphasized sorting states.
+
+### Changed
+
+- Moved command editing into the expanded command row and replaced the separate save/delete action card with debounced autosave plus a trailing delete action.
+- Updated management page screenshots across the English, Traditional Chinese, and Simplified Chinese READMEs.
+- Raised the minimum compatible Cerebr host version to `>=2.5.9 <3.0.0`.
+- Bumped the plugin manifest version to `0.1.2` for the `v0.1.2` release.
+
+### Fixed
+
+- Fixed deleting a command from a collapsed list opening a neighboring command editor unexpectedly.
+- Fixed expanded-row delete handling so deleting the active command collapses the editor while deleting another command preserves the current editor when possible.
+
 ## [v0.1.1] - 2026-04-20
 
 ### Added
@@ -34,5 +52,6 @@ All notable changes to this project will be documented in this file.
 - Added `helpers/plugin-i18n.js`, locale JSON files, self-tests, and release workflows for CI plus GitHub tag-based packaging.
 - Added release packaging that unwraps into a sideload-ready `lite-slash-commands/` folder for Cerebr developer mode.
 
+[v0.1.2]: https://github.com/zeta987/cerebr-plugin-slash-commands/compare/v0.1.1...v0.1.2
 [v0.1.1]: https://github.com/zeta987/cerebr-plugin-slash-commands/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/zeta987/cerebr-plugin-slash-commands/releases/tag/v0.1.0
