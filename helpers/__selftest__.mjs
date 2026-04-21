@@ -112,14 +112,19 @@ const manageSections = buildManageSections({
     },
     selectedCommand: commands[1],
     currentLocale: 'en',
+    inlineBodySupported: true,
     formatTimestamp: formatDate,
     t: translate,
 });
-assert.equal(manageSections.length, 2, 'expanded state should inline the editor inside the expanded row, not a sibling card');
+assert.equal(manageSections.length, 2, 'web-view layout should inline the editor inside the expanded row, not a sibling card');
 assert.equal(manageSections[1].body.length, 1, 'list card should stay a single sortable list regardless of expanded state');
 const listSection = manageSections[1].body[0];
 assert.equal(listSection.kind, 'list', 'list card body should be a host list section');
 assert.equal(listSection.sortable, true, 'manage list should stay sortable even when a row is expanded');
+assert.equal(listSection.dragPreview, 'inline', 'manage list should opt into host inline drag feedback to avoid native drag-image snapback');
+assert.equal(listSection.dragHandle, 'comfortable', 'manage list should request the larger host drag handle hit area');
+assert.equal(listSection.sortingStyle, 'emphasized', 'manage list should request stronger host sorting emphasis during live reorder');
+assert.equal(listSection.dropIndicator, 'none', 'manage list should suppress the legacy drop line when live reorder is already visible');
 assert.equal(listSection.id, 'slash-commands', 'manage list id should stay stable for host reorder events');
 assert.equal(listSection.items.length, 2, 'manage list should contain every command row');
 
@@ -150,6 +155,74 @@ assert.equal(
     selectedRow.body.some((section) => section.kind === 'actions'),
     false,
     'expanded row body should no longer contain a save/delete action bar',
+);
+
+const extensionSections = buildManageSections({
+    topActions: [{ id: 'create-command', label: 'Create' }],
+    commands,
+    expandedCommandId: 'cmd-2',
+    editorMode: 'edit',
+    editorValues: {
+        name: 'beta',
+        label: '',
+        aliases: '',
+        description: '',
+        prompt: 'Prompt B',
+    },
+    selectedCommand: commands[1],
+    currentLocale: 'en',
+    inlineBodySupported: false,
+    formatTimestamp: formatDate,
+    t: translate,
+});
+assert.equal(extensionSections.length, 3, 'extension layout should fall back to a sibling editor card');
+const extensionListSection = extensionSections[1].body[0];
+assert.equal(extensionListSection.kind, 'list', 'extension layout should still expose the list');
+assert.equal(extensionListSection.sortable, true, 'extension layout should keep the list sortable');
+assert.equal(extensionListSection.dragPreview, 'inline', 'extension fallback list should keep the same host inline drag feedback');
+assert.equal(extensionListSection.dragHandle, 'comfortable', 'extension fallback list should keep the larger host drag handle hit area');
+assert.equal(extensionListSection.sortingStyle, 'emphasized', 'extension fallback list should keep the stronger host sorting emphasis');
+assert.equal(extensionListSection.dropIndicator, 'none', 'extension fallback list should keep the drop line disabled');
+assert.ok(
+    extensionListSection.items.every((item) => item.body === undefined),
+    'extension layout must not rely on inline row bodies (host item flex-direction is row)',
+);
+assert.ok(
+    extensionListSection.items.find((item) => item.id === 'cmd-2')?.selected,
+    'extension layout should still mark the expanded row as selected',
+);
+const extensionEditorCard = extensionSections[2];
+assert.equal(extensionEditorCard.kind, 'card', 'extension layout should render the editor as a sibling card');
+assert.equal(extensionEditorCard.body.length, 2, 'extension editor card should contain note + form');
+assert.equal(extensionEditorCard.body[0].kind, 'note');
+assert.equal(extensionEditorCard.body[1].kind, 'form');
+assert.deepEqual(
+    extensionEditorCard.body[1].fields.map((field) => field.id),
+    ['name', 'aliases', 'description', 'prompt'],
+    'extension layout editor should expose the same four fields',
+);
+
+const extensionWithoutInline = buildManageSections({
+    topActions: [{ id: 'create-command', label: 'Create' }],
+    commands,
+    expandedCommandId: 'cmd-2',
+    editorMode: 'edit',
+    editorValues: {
+        name: 'beta',
+        label: '',
+        aliases: '',
+        description: '',
+        prompt: 'Prompt B',
+    },
+    selectedCommand: commands[1],
+    currentLocale: 'en',
+    formatTimestamp: formatDate,
+    t: translate,
+});
+assert.equal(
+    extensionWithoutInline.length,
+    3,
+    'missing inlineBodySupported flag must default to the safer sibling-card layout (extension-safe)',
 );
 
 assert.deepEqual(
@@ -255,13 +328,23 @@ assert.match(shellSource, /function buildSlashCommandDescriptors\(commands = \[\
 assert.match(shellSource, /async function persistEditorDraft\(\) \{/, 'shell.js: persistEditorDraft helper should drive debounced autosave');
 assert.match(shellSource, /function schedulePersistDraft\(\) \{/, 'shell.js: schedulePersistDraft helper should debounce editor change events');
 assert.match(shellSource, /async function flushPendingDraft\(\) \{/, 'shell.js: flushPendingDraft helper should let action handlers force-drain the pending timer');
-assert.match(shellSource, /function injectInlineBodyStyles\(\) \{/, 'shell.js: injectInlineBodyStyles helper should stack drag-handle row and editor body vertically');
-assert.match(shellSource, /function removeInlineBodyStyles\(\) \{/, 'shell.js: removeInlineBodyStyles helper should clean up on plugin unload');
-assert.match(shellSource, /cerebr-plugin-page-list__item:has\(>\s*\.cerebr-plugin-page-list__body\)/, 'shell.js: inline body CSS should target only items that actually have a body');
-assert.match(shellSource, /injectInlineBodyStyles\(\);/, 'shell.js: setup should inject the inline body layout styles');
-assert.match(shellSource, /removeInlineBodyStyles\(\);/, 'shell.js: cleanup should remove the injected styles');
+assert.match(shellSource, /inlineBodySupported:\s*true/, 'shell.js: manage view should always request inline row bodies from the host renderer');
+assert.doesNotMatch(shellSource, /import Sortable from '\.\/vendor\/sortable\.esm\.js'/, 'shell.js: plugin should rely on host-native sortable lists instead of vendored SortableJS');
+assert.doesNotMatch(shellSource, /function injectInlineBodyStyles\(\) \{/, 'shell.js: plugin should not inject host-page CSS for inline list bodies');
+assert.doesNotMatch(shellSource, /function removeInlineBodyStyles\(\) \{/, 'shell.js: plugin should not manage injected host-page CSS anymore');
+assert.doesNotMatch(shellSource, /function ensureSortable\(listEl\) \{/, 'shell.js: plugin should not bootstrap SortableJS manually');
+assert.doesNotMatch(shellSource, /function handleSortableChoose\(evt\) \{/, 'shell.js: plugin should not collapse rows to work around guest drag limitations');
+assert.doesNotMatch(shellSource, /async function handleSortableEnd\(evt\) \{/, 'shell.js: plugin should not persist SortableJS reorder events directly');
+assert.doesNotMatch(shellSource, /function initListObserver\(\) \{/, 'shell.js: plugin should not need a MutationObserver for host re-renders');
+assert.doesNotMatch(shellSource, /function teardownListObserver\(\) \{/, 'shell.js: plugin cleanup should not tear down guest-side drag helpers');
+assert.doesNotMatch(shellSource, /function detectInlineBodySupport\(\) \{/, 'shell.js: plugin should not probe cross-frame host DOM availability');
+assert.doesNotMatch(shellSource, /function getHostDocument\(\) \{/, 'shell.js: plugin should not walk host documents directly');
+assert.doesNotMatch(shellSource, /function collectReachableDocuments\(\) \{/, 'shell.js: plugin should not enumerate reachable host documents');
+assert.doesNotMatch(shellSource, /window\.self === window\.top/, 'shell.js: plugin should not branch on top-level vs guest window to enable inline bodies');
 assert.match(shellSource, /if \(event\?\.type === 'reorder' && event\.listId === 'slash-commands'\)/, 'shell.js: manage page should handle host reorder events for slash-commands');
 assert.match(shellSource, /await reorderCommands\(Array\.isArray\(event\.orderedItemIds\) \? event\.orderedItemIds : \[\], values\);/, 'shell.js: reorder handler should forward live form values so drafts survive drag sorting');
+assert.match(shellSource, /const nextEnvelope = normalizeEnvelope\(\{[\s\S]*?commands: nextCommands,[\s\S]*?\}\s*,\s*\{[\s\S]*?fallbackInitializedAt:/, 'shell.js: reorderCommands should commit the next command order into runtime state before persistence');
+assert.match(shellSource, /await renderCurrentPage\(\{ resetViewState: true \}\);\s*await writeStoredEnvelope\(nextEnvelope\);\s*await syncSlashCommands\(\);/, 'shell.js: reorderCommands should repaint before disk persistence so drag release cannot flash the stale order');
 assert.doesNotMatch(shellSource, /async function saveCurrentCommand\b/, 'shell.js: manual save helper should be removed in favor of autosave');
 assert.doesNotMatch(shellSource, /ui\.status_saved/, 'shell.js: saved toast reference should be removed');
 assert.doesNotMatch(shellSource, /'save-command'/, 'shell.js: save-command action id should be removed');

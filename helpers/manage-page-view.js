@@ -81,6 +81,7 @@ function createCommandRowItem({
     editorValues,
     selectedCommand,
     currentLocale,
+    inlineBodySupported,
     formatTimestamp,
     t,
 }) {
@@ -103,7 +104,7 @@ function createCommandRowItem({
         ],
     };
 
-    if (expanded && selectedCommand && selectedCommand.id === command.id) {
+    if (inlineBodySupported && expanded && selectedCommand && selectedCommand.id === command.id) {
         item.body = createExpandedEditorBody({
             command: selectedCommand,
             editorMode,
@@ -134,6 +135,7 @@ export function buildManageSections({
     editorValues,
     selectedCommand,
     currentLocale,
+    inlineBodySupported = false,
     formatTimestamp,
     t,
 }) {
@@ -173,6 +175,10 @@ export function buildManageSections({
                 kind: 'list',
                 id: 'slash-commands',
                 sortable: true,
+                dragPreview: 'inline',
+                dragHandle: 'comfortable',
+                sortingStyle: 'emphasized',
+                dropIndicator: 'none',
                 items: commands.map((command) => createCommandRowItem({
                     command,
                     expandedCommandId,
@@ -180,12 +186,27 @@ export function buildManageSections({
                     editorValues,
                     selectedCommand,
                     currentLocale,
+                    inlineBodySupported,
                     formatTimestamp,
                     t,
                 })),
             },
         ],
     });
+
+    if (!inlineBodySupported && expandedCommandId && selectedCommand) {
+        sections.push({
+            kind: 'card',
+            body: createExpandedEditorBody({
+                command: selectedCommand,
+                editorMode,
+                editorValues,
+                currentLocale,
+                formatTimestamp,
+                t,
+            }),
+        });
+    }
 
     return sections;
 }

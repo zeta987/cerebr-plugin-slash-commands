@@ -354,49 +354,7 @@ const runtimeState = {
     selectedCommandId: '',
     stopHandles: [],
     pendingDraftTimer: null,
-    injectedStyle: null,
 };
-
-const INLINE_BODY_STYLE_ID = 'lite-slash-commands-inline-body-layout';
-const INLINE_BODY_STYLE_CSS = `
-.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) {
-    flex-direction: column;
-    align-items: stretch;
-}
-.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__row,
-.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__body {
-    box-sizing: border-box;
-    width: 100%;
-}
-.cerebr-plugin-page-list__item:has(> .cerebr-plugin-page-list__body) > .cerebr-plugin-page-list__body {
-    padding-top: 18px;
-    padding-bottom: 18px;
-}
-`;
-
-function injectInlineBodyStyles() {
-    if (typeof document === 'undefined' || runtimeState.injectedStyle) {
-        return;
-    }
-    const existing = document.getElementById(INLINE_BODY_STYLE_ID);
-    if (existing) {
-        runtimeState.injectedStyle = existing;
-        return;
-    }
-    const style = document.createElement('style');
-    style.id = INLINE_BODY_STYLE_ID;
-    style.textContent = INLINE_BODY_STYLE_CSS;
-    document.head.appendChild(style);
-    runtimeState.injectedStyle = style;
-}
-
-function removeInlineBodyStyles() {
-    const style = runtimeState.injectedStyle;
-    runtimeState.injectedStyle = null;
-    if (style && style.parentNode) {
-        style.parentNode.removeChild(style);
-    }
-}
 
 function getCommands() {
     return runtimeState.commandEnvelope?.commands || [];
@@ -620,6 +578,7 @@ function buildManageView() {
             editorValues: runtimeState.editorValues,
             selectedCommand: getSelectedCommand(),
             currentLocale: runtimeState.currentLocale,
+            inlineBodySupported: true,
             formatTimestamp,
             t,
         }),
@@ -803,12 +762,22 @@ async function reorderCommands(orderedItemIds, values = {}) {
     }
 
     const snapshot = captureEditorSnapshot(values);
-    await persistEnvelope({
+    const nextEnvelope = normalizeEnvelope({
         ...runtimeState.commandEnvelope,
         commands: nextCommands,
+    }, {
+        fallbackInitializedAt: runtimeState.commandEnvelope?.meta?.initializedAt || Date.now(),
     });
+    nextEnvelope.meta = {
+        ...nextEnvelope.meta,
+        userManagedAt: Date.now(),
+    };
+    runtimeState.commandEnvelope = nextEnvelope;
     restoreEditorSnapshot(snapshot);
+
     await renderCurrentPage({ resetViewState: true });
+    await writeStoredEnvelope(nextEnvelope);
+    await syncSlashCommands();
     return true;
 }
 
@@ -1160,8 +1129,6 @@ export default {
         runtimeState.currentLocale = await Promise.resolve(api.i18n?.getLocale?.());
         await loadPluginLocale(runtimeState.currentLocale || 'en');
 
-        injectInlineBodyStyles();
-
         runtimeState.commandEnvelope = await loadInitialEnvelope();
         ensureEditorSelection();
         await syncSlashCommands();
@@ -1201,8 +1168,6 @@ export default {
             if (runtimeState.pageOpen) {
                 await api.shell.closePage?.('stop');
             }
-
-            removeInlineBodyStyles();
         };
     },
 };
