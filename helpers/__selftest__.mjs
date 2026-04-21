@@ -5,7 +5,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { expandLanguagePlaceholders } from './language-placeholders.js';
-import { buildManageSections, toggleExpandedCommandId } from './manage-page-view.js';
+import {
+    buildManageSections,
+    resolveExpandedCommandIdAfterDelete,
+    toggleExpandedCommandId,
+} from './manage-page-view.js';
 import { reorderCommandsByIds } from './reorder-commands.js';
 
 // --- language-placeholders.js ---
@@ -97,6 +101,27 @@ const commands = [
         updatedAt: 4,
     },
 ];
+
+assert.equal(
+    resolveExpandedCommandIdAfterDelete('', 'cmd-1', commands),
+    '',
+    'deleting from a collapsed list should keep the editor collapsed',
+);
+assert.equal(
+    resolveExpandedCommandIdAfterDelete('cmd-1', 'cmd-1', commands.slice(1)),
+    '',
+    'deleting the expanded command should not expand a neighboring command',
+);
+assert.equal(
+    resolveExpandedCommandIdAfterDelete('cmd-2', 'cmd-1', commands.slice(1)),
+    'cmd-2',
+    'deleting another command should preserve the currently expanded command',
+);
+assert.equal(
+    resolveExpandedCommandIdAfterDelete('cmd-3', 'cmd-1', commands.slice(1)),
+    '',
+    'missing expanded command ids should collapse instead of selecting a fallback',
+);
 
 const manageSections = buildManageSections({
     topActions: [{ id: 'create-command', label: 'Create' }],

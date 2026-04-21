@@ -5,7 +5,11 @@ import {
     getSeedCommandMeta,
 } from './helpers/plugin-i18n.js';
 import { expandLanguagePlaceholders } from './helpers/language-placeholders.js';
-import { buildManageSections, toggleExpandedCommandId } from './helpers/manage-page-view.js';
+import {
+    buildManageSections,
+    resolveExpandedCommandIdAfterDelete,
+    toggleExpandedCommandId,
+} from './helpers/manage-page-view.js';
 import { reorderCommandsByIds } from './helpers/reorder-commands.js';
 import seedPromptsSource from './seed-prompts.json' with { type: 'json' };
 
@@ -789,18 +793,24 @@ async function deleteCommand(commandId) {
         return false;
     }
 
+    const previousExpandedCommandId = runtimeState.expandedCommandId;
     const [removed] = commands.splice(index, 1);
     await persistEnvelope({
         ...runtimeState.commandEnvelope,
         commands,
     });
 
-    if (commands[index]) {
-        beginEditCommand(commands[index].id);
-    } else if (commands[index - 1]) {
-        beginEditCommand(commands[index - 1].id);
-    } else {
+    const nextExpandedCommandId = resolveExpandedCommandIdAfterDelete(
+        previousExpandedCommandId,
+        removed.id,
+        commands,
+    );
+    if (commands.length === 0) {
         beginCreateCommand();
+    } else if (nextExpandedCommandId) {
+        beginEditCommand(nextExpandedCommandId);
+    } else {
+        collapseEditor();
     }
 
     runtimeState.api.ui.showToast(t('ui.status_deleted', [removed.name]));

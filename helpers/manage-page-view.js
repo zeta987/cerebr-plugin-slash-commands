@@ -127,6 +127,21 @@ export function toggleExpandedCommandId(currentExpandedCommandId, commandId) {
     return normalizeId(currentExpandedCommandId) === nextId ? '' : nextId;
 }
 
+export function resolveExpandedCommandIdAfterDelete(
+    currentExpandedCommandId,
+    deletedCommandId,
+    commandsAfterDelete = [],
+) {
+    const expandedId = normalizeId(currentExpandedCommandId);
+    if (!expandedId || expandedId === normalizeId(deletedCommandId)) {
+        return '';
+    }
+
+    return commandsAfterDelete.some((command) => normalizeId(command?.id) === expandedId)
+        ? expandedId
+        : '';
+}
+
 export function buildManageSections({
     topActions,
     commands,
