@@ -34,6 +34,10 @@ Cerebr's plugin manager only accepts folders, not zip archives. To install a pac
 
 Want the latest unreleased work? `git clone https://github.com/zeta987/cerebr-plugin-slash-commands.git` the repo and sideload its root directly.
 
+## Release notes
+
+See [CHANGELOG.md](./CHANGELOG.md) for version-by-version changes, bug fixes, and compatibility updates.
+
 ## Repository layout
 
 ```text

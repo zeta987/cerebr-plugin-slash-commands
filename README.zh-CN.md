@@ -30,6 +30,10 @@ Cerebr 插件管理只接受文件夹，安装打包版本的流程如下：
 
 想试还未发布的最新代码？直接 `git clone https://github.com/zeta987/cerebr-plugin-slash-commands.git` 本仓库并侧载根目录即可。
 
+## 变更日志
+
+请查看 [CHANGELOG.md](./CHANGELOG.md)，了解每个版本的功能变更、Bug 修复与兼容性更新。
+
 ## 仓库结构
 
 ```text

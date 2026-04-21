@@ -30,6 +30,10 @@ Cerebr 外掛管理只接受資料夾，安裝打包版本的流程如下：
 
 想試還沒發版的最新版？直接 `git clone https://github.com/zeta987/cerebr-plugin-slash-commands.git` 本儲存庫整個拖入即可。
 
+## 變更日誌
+
+請查看 [CHANGELOG.md](./CHANGELOG.md)，了解每個版本的功能變更、Bug 修正與相容性更新。
+
 ## 儲存庫結構
 
 ```text
